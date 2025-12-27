@@ -1,0 +1,33 @@
+meta {
+  name: login
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:3000/api/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "isa@mail.com",
+    "password": "753159"
+  }
+}
+
+body:form-urlencoded {
+  email: isa@mail.com
+  password: 753159
+}
+
+body:multipart-form {
+  email: isa@mail.com
+  password: 753159
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

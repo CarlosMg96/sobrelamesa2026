@@ -1,0 +1,20 @@
+meta {
+  name: getEvent
+  type: http
+  seq: 2
+}
+
+get {
+  url: {url}/events/events/4
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjoib3ptcmhoMnh4S2RvcnRiamN1TnpQZzF2UW4vQmdobStkWWtHdzlrL0FIbVAvRFE0dlFDUi8yemI5d1J1NjdodVhZOUNkaXpBWkthSHVhOWdQY3I5UE43Y2FyQmYiLCJpYXQiOjE3NjYwMDkyNDgsImV4cCI6MTc2NjAxMjg0OH0.Uw2dVMTeq8lAU1YuoB8BKK9z6M23_7C7YcDIE6Mf26g
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

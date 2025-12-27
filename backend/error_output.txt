@@ -1,0 +1,17 @@
+yarn run v1.22.22
+$ jest
+FAIL tests/modules/events/event.routes.test.ts
+  ÔùÅ Test suite failed to run
+
+    src/config/database.ts:1:20 - error TS2307: Cannot find module 'dotenv' or its corresponding type declarations.
+
+    1 import dotenv from 'dotenv';
+                         ~~~~~~~~
+
+Test Suites: 1 failed, 1 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        2.607 s
+Ran all test suites.
+error Command failed with exit code 1.
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.

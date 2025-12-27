@@ -1,0 +1,20 @@
+meta {
+  name: getListEvents
+  type: http
+  seq: 1
+}
+
+get {
+  url: http://localhost:3000/api/events/events
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjoiVmlZdTBtNFpsazAzZ1o4S1BGYlN3aU1sMmx6cnRaMFJmekthMkZmUXloeHhISVBncjNPNzRVQlI0S3FWNDVsc2FMdk14eWRwRVNKYlVyZ05PMEU3N0xMN0VhZE4iLCJpYXQiOjE3NjYwMTg2NTMsImV4cCI6MTc2NjAyMjI1M30.ueRV7AXbhHFm354WLhUj1_gT23AdGyx1Lur-QJgpxiQ
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

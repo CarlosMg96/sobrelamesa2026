@@ -1,0 +1,66 @@
+# Node + TypeScript - .gitignore
+
+# dependencies
+/node_modules/
+
+# production build output
+/dist/
+/build/
+/out/
+/lib/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+*.log
+logs/*
+!logs/.gitkeep
+test_output.txt
+
+# environment variables
+.env
+.env.*
+!.env.example
+
+# test coverage & test caches
+/coverage/
+/.nyc_output/
+/jest-cache/
+
+# bundler caches
+/.parcel-cache/
+/.cache/
+
+# local dev files / editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# temporary files
+*.tgz
+*.pid
+*.seed
+*.pid.lock
+
+# TypeScript emitted files (if you emit next to sources, otherwise keep compiled output dirs above)
+*.d.ts.map
+*.d.ts
+
+# optional: lockfiles for alternative package managers (uncomment if you use them locally and don't want to commit)
+/pnpm-lock.yaml
+
+.test_output.txt

@@ -1,0 +1,45 @@
+meta {
+  name: NewEvent
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:3000/api/events/events
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjoiVmlZdTBtNFpsazAzZ1o4S1BGYlN3aU1sMmx6cnRaMFJmekthMkZmUXloeHhISVBncjNPNzRVQlI0S3FWNDVsc2FMdk14eWRwRVNKYlVyZ05PMEU3N0xMN0VhZE4iLCJpYXQiOjE3NjYwMTg2NTMsImV4cCI6MTc2NjAyMjI1M30.ueRV7AXbhHFm354WLhUj1_gT23AdGyx1Lur-QJgpxiQ
+}
+
+body:json {
+  {
+    "fecha_cotizacion": "2025-12-17",
+    "cliente_id": "200",
+    "agente_id": "16",
+    "estatus": 1,
+    "tipo_venta": 1,
+    "tipo_evento": 1,
+    "no_personas": 150,
+    "deposito": 0,
+    "fecha_evento": "2026-01-21",
+    "hora_evento": "18:00",
+    "fecha_entrega": "2026-01-19",
+    "hora_entrega": "10:00",
+    "fecha_recoleccion": "2026-01-22",
+    "hora_recoleccion": "09:00",
+    "tipo_pago": 1,
+    "domicilio_entrega": "Av. Reforma 1, CDMX",
+    "domicilio_recoleccion": "Av. Reforma 1, CDMX",
+    "status_entrega": "1",
+    "lavado_desinfeccion": "",
+    "descuento": 10.5
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
