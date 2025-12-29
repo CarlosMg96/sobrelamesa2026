@@ -28,6 +28,10 @@ export const authMiddleware = (
 
     const payload = verifyToken(token);
 
+    if (payload.type !== "access") {
+      return sendResponse(res, 401, "Invalid token type");
+    }
+
     req.user = {
       id: payload.id,
       email: payload.email,

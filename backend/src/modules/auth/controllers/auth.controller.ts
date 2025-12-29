@@ -27,4 +27,35 @@ export const authController = new (class AuthController {
       return sendResponse(res, 500, "Internal server error");
     }
   };
+
+  refresh = async (req, res) => {
+    try {
+      const { refreshToken } = req.body;
+      if (!refreshToken) {
+        return sendResponse(res, 400, "Refresh token is required");
+      }
+      const result = await service.refresh(refreshToken);
+      return sendResponse(res, 200, "Token refreshed", result);
+    } catch (error) {
+      if (error instanceof AuthError) {
+        return sendResponse(res, 401, error.message);
+      }
+      console.error("Error in refresh:", error);
+      return sendResponse(res, 500, "Internal server error");
+    }
+  };
+
+  logout = async (req, res) => {
+    try {
+      const userId = (req as any).user?.id;
+      if (!userId) {
+        return sendResponse(res, 401, "Unauthorized");
+      }
+      await service.logout(userId);
+      return sendResponse(res, 200, "Logout successful");
+    } catch (error) {
+      console.error("Error in logout:", error);
+      return sendResponse(res, 500, "Internal server error");
+    }
+  };
 })();
