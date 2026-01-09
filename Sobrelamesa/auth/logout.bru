@@ -1,0 +1,28 @@
+meta {
+  name: logout
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:3000/api/auth/logout
+  body: text
+  auth: bearer
+}
+
+headers {
+  : 
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjoiOE90clRCNXYxd2JHRkVxbUhTbXNCUWg4VHZsczNZVS9LWUhCZFdoZTB2cGpTT2tLc1ZmTVNJZXQwczhIMHNUOHlVR2t2NmFCWk1STUVmc2J3eVZvYXZRRjl6Z2VjUGJ1TDNPcmw0NjZHNFA3LzZ1MW5nPT0iLCJpYXQiOjE3NjY5NjA1NzMsImV4cCI6MTc2Njk2NDE3M30.35Sb-h7Yx9BQXJG_bISOXMoj3TbdJTxM50hG2xJg5hM
+}
+
+body:text {
+  // recuerda usar el access token
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

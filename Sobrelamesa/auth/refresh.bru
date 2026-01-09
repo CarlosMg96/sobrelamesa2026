@@ -1,0 +1,23 @@
+meta {
+  name: refresh
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:3000/api/auth/refresh
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjoiQkZwZDZBV0oxS09rQW1CK0dYR3RRT2dUTGhXWTJOUGpTZEJDV2hqa2Zvc0tzZVpzQVF1WkRYRHUzWGc3SG5LaTRsMDNuT0ZCIiwiaWF0IjoxNzY2OTU5ODcwLCJleHAiOjE3Njc1NjQ2NzB9.iLaM85tcqJf-_QnGP_8QuGXbbHAzwtaV_fLx7M6cJSU"
+  }
+  
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
