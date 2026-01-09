@@ -1,0 +1,39 @@
+meta {
+  name: NewProduct
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:3000/api/products/product
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjoiVzZ2YXRaSjBMWUMxU3dpV0Q5cDZSNWcyb050QjZ0WW56eDhyUTh2aVp0a0RpM0oxeFR3d2ZLOElVSmwvaG0wU0FHY29uSlB0UmRUbGdacDBSbVJUN0VzM3RIM25UL3RmQnpQbnRlWUM0dy9ueG5ydnhRPT0iLCJpYXQiOjE3Njc5OTkwMDEsImV4cCI6MTc2ODAwMjYwMX0.UTC7ofbormZH_WbeZdLDbCiqgBqCkgSoaNLlaDLwgdA
+}
+
+body:json {
+   {
+          "clave": " PBGLL 2",
+          "producto": "PLATO BASE GARIGOL LILA Nuevo",
+          "stock": 100,
+          "medidas": "35.5 cm",
+          "categoria_producto_id": 1,
+          "subcategoria_id": 1,
+          "precio_renta": 55,
+          "reparacion": 0,
+          "imagen": "17-2-.png",
+          "precio_reposicion": 250,
+          "dias_mantenimiento": 1,
+          "costo": 0,
+          "deposito_garantia": 18,
+          "costo_sin_iva": 50
+        }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

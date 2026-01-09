@@ -14,9 +14,9 @@ const eventService = new EventService(eventsRepository);  // Instancia del servi
 const eventController = new EventController(eventService);  // Instancia del controlador
 
 // Rutas del controlador de eventos
-router.get("/events", authMiddleware, authorize([Role.MASTER, Role.ADMIN, Role.SALES, Role.WAREHOUSE, Role.STAFF]), (req, res) => eventController.getListEvents(req, res));
-router.get("/events/:id", authMiddleware, authorize([Role.MASTER, Role.ADMIN, Role.SALES, Role.WAREHOUSE, Role.STAFF]), (req, res) => eventController.getEventById(req, res));
-router.post("/events", authMiddleware, authorize([Role.MASTER, Role.ADMIN, Role.SALES, Role.WAREHOUSE, Role.STAFF]), (req, res) => eventController.createEvent(req, res));
-router.delete("/events/:id", authMiddleware, authorize([Role.MASTER, Role.ADMIN, Role.SALES, Role.WAREHOUSE, Role.STAFF]), (req, res) => eventController.deleteEvent(req, res));
+router.get("/list", authMiddleware, authorize([Role.MASTER, Role.ADMIN, Role.SALES, Role.WAREHOUSE, Role.STAFF]), (req, res) => eventController.getListEvents(req, res));
+router.get("/event/:id", authMiddleware, authorize([Role.MASTER, Role.ADMIN, Role.SALES, Role.WAREHOUSE, Role.STAFF]), (req, res) => eventController.getEventById(req, res));
+router.post("/event", authMiddleware, authorize([Role.MASTER, Role.ADMIN, Role.SALES, Role.WAREHOUSE, Role.STAFF]), (req, res) => eventController.createEvent(req, res));
+router.delete("/event/:id", authMiddleware, authorize([Role.MASTER, Role.ADMIN, Role.SALES, Role.WAREHOUSE, Role.STAFF]), (req, res) => eventController.deleteEvent(req, res));
 
 export default router;
