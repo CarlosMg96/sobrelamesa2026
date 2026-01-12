@@ -4,11 +4,23 @@ import './index.css';
 import App from './App';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import reportWebVitals from './reportWebVitals';
+import { NotificationsProvider } from './modules/notifications/context/NotificationsContext';
+import { AuthProvider } from './modules/auth/hooks/useAuth';
+import { BrowserRouter } from 'react-router-dom';
+import { AppEventsProvider } from './app/providers/AppEventsProvider';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    <BrowserRouter>
+      <AuthProvider>
+        <NotificationsProvider>
+          <AppEventsProvider>
+            <App />
+          </AppEventsProvider>
+        </NotificationsProvider>
+      </AuthProvider>
+    </BrowserRouter>
   </React.StrictMode>
 );
 
