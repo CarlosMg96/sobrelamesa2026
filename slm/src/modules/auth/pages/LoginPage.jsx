@@ -7,7 +7,8 @@ export default function LoginPage() {
     <Box
       sx={{
         display: 'flex',
-        minHeight: '100vh',
+        flex: 1,           // Cambiado de height: '100%' a flex: 1
+        minHeight: 0,     
         flexDirection: { xs: 'column', md: 'row' }, // columna en móvil, fila en desktop
       }}
     >
