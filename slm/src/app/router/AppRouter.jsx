@@ -2,6 +2,7 @@
 import { Routes, Route } from 'react-router-dom'
 import LoginPage from '../../modules/auth/pages/LoginPage'
 import Dashboard from '../../modules/dashboard/pages/dashboard'
+import Page404 from '../../modules/errors/pages/404'
 import { PrivateRoute } from './PrivateRoute'
 import { PublicRoute } from './PublicRoute'
 
@@ -25,6 +26,7 @@ export function AppRouter() {
                     </PrivateRoute>
                 }
             />
+            <Route path="*" element={<Page404 />} />
         </Routes>
     )
 }
