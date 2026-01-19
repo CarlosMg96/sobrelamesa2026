@@ -8,10 +8,13 @@ import { NotificationsProvider } from './modules/notifications/context/Notificat
 import { AuthProvider } from './modules/auth/hooks/useAuth';
 import { BrowserRouter } from 'react-router-dom';
 import { AppEventsProvider } from './app/providers/AppEventsProvider';
+import CssBaseline from '@mui/material/CssBaseline';
+
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
+    <CssBaseline />
     <BrowserRouter>
       <AuthProvider>
         <NotificationsProvider>
@@ -23,6 +26,7 @@ root.render(
     </BrowserRouter>
   </React.StrictMode>
 );
+
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.

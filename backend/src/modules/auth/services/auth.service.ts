@@ -62,4 +62,11 @@ export class AuthService {
   async logout(userId: number) {
     await this.repo.updateRefreshToken(userId, null);
   }
+
+  async me(userId: number) {
+    const user = await this.repo.findById(userId);
+    if (!user) throw new AuthError("User not found", "USER_NOT_FOUND");
+    return user;
+  }
+
 }
