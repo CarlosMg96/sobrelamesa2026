@@ -7,5 +7,4 @@ export interface AuthRepository {
   createUser(user: AuthUser): Promise<AuthUser>;
   deleteUser(userId: number): Promise<void>;
   updateUser(user: AuthUser): Promise<AuthUser>;
-  me(userId: number): Promise<AuthUser>;
 }

@@ -38,7 +38,7 @@ export class AuthMySQLRepository implements AuthRepository {
 
     async findById(id: number): Promise<AuthUser | null> {
         const sql = `
-            SELECT id, email, password, tipo_usuario, status, hashed_refresh_token
+            SELECT id, email, tipo_usuario, status, hashed_refresh_token
             FROM users
             WHERE id = ?
             LIMIT 1
@@ -52,10 +52,10 @@ export class AuthMySQLRepository implements AuthRepository {
             const result: AuthUser = {
                 id: (row as any).id,
                 email: (row as any).email,
-                password: (row as any).password,
+                password: "",
                 tipo_usuario: (row as any).tipo_usuario,
                 status: (row as any).status,
-                hashed_refresh_token: (row as any).hashed_refresh_token
+                hashed_refresh_token: ""
             };
             return result;
         } catch (error) {
@@ -135,34 +135,6 @@ export class AuthMySQLRepository implements AuthRepository {
         } catch (error) {
             console.error('Error en updateUser:', error);
             throw error;
-        }
-    }
-
-    async me(userId: number): Promise<AuthUser> {
-        const sql = `
-            SELECT id, email, tipo_usuario, status
-            FROM users
-            WHERE id = ?
-            LIMIT 1
-        `;
-        try {
-            const [rows] = await db.query(sql, [userId]);
-            const row = Array.isArray(rows) && rows.length ? rows[0] : null;
-            if (!row) {
-                return null;
-            }
-            const result: AuthUser = {
-                id: (row as any).id,
-                email: (row as any).email,
-                password: "",
-                tipo_usuario: (row as any).tipo_usuario,
-                status: (row as any).status,
-                hashed_refresh_token: null
-            };
-            return result;
-        } catch (error) {
-            console.error('Error en me:', error);
-            return null;
         }
     }
 }

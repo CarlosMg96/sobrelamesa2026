@@ -1,12 +1,12 @@
 import { emit, AppEvents } from '../events/appEvents'
-import { getTokenDecrypted } from '../../shared/utils/auth'
+import { getAccessToken } from '../../shared/utils/auth'
 
 export function setupInterceptors(client) {
     client.interceptors.request.use(
         async config => {
-            const token = await getTokenDecrypted()
+            const token = getAccessToken()
 
-            if (token && !config.url.includes('auth')) {
+            if (token) {
                 config.headers.Authorization = `Bearer ${token}`
             }
 

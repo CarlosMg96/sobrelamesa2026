@@ -1,7 +1,7 @@
 // app/router/AppRouter.jsx
 import { Routes, Route } from 'react-router-dom'
-import { LoginPage } from '../../modules/auth/pages/LoginPage'
-import { Dashboard } from '../../modules/dashboard/pages/dashboard'
+import LoginPage from '../../modules/auth/pages/LoginPage'
+import Dashboard from '../../modules/dashboard/pages/dashboard'
 import { PrivateRoute } from './PrivateRoute'
 import { PublicRoute } from './PublicRoute'
 
@@ -18,7 +18,7 @@ export function AppRouter() {
             />
 
             <Route
-                path="/"
+                path="/dashboard"
                 element={
                     <PrivateRoute>
                         <Dashboard />

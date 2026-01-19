@@ -5,7 +5,7 @@ import { useAuth } from '../../modules/auth/hooks/useAuth'
 export function PublicRoute({ children }) {
     const { user } = useAuth()
 
-    if (user) return <Navigate to="/" replace />
+    if (user) return <Navigate to="/dashboard" replace />
 
     return children
 }

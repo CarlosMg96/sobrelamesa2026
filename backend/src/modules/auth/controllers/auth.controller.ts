@@ -58,4 +58,18 @@ export const authController = new (class AuthController {
       return sendResponse(res, 500, "Internal server error");
     }
   };
+
+  me = async (req, res) => {
+    try {
+      const userId = (req as any).user?.id;
+      if (!userId) {
+        return sendResponse(res, 401, "Unauthorized");
+      }
+      const user = await service.me(userId);
+      return sendResponse(res, 200, "User retrieved", user);
+    } catch (error) {
+      console.error("Error in me:", error);
+      return sendResponse(res, 500, "Internal server error");
+    }
+  };
 })();

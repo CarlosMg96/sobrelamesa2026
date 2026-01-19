@@ -1,7 +1,19 @@
-import LoginPage from './modules/auth/pages/LoginPage';
+import { AppRouter } from './app/router/AppRouter'
+import { AuthProvider } from './modules/auth/hooks/useAuth'
+import { NotificationsProvider } from './modules/notifications/context/NotificationsContext'
+import CssBaseline from '@mui/material/CssBaseline'
 
 function App() {
-  return <LoginPage />;
+  return (
+    <>
+      <CssBaseline />
+      <AuthProvider>
+        <NotificationsProvider>
+          <AppRouter />
+        </NotificationsProvider>
+      </AuthProvider>
+    </>
+  )
 }
 
-export default App;
+export default App

@@ -1,21 +1,33 @@
-import { createContext, useContext, useState } from 'react'
-import { loginService } from '../services/auth.service'
+import { createContext, useContext, useState, useEffect } from 'react'
+import { loginService, meService } from '../services/auth.service'
 import { emit, AppEvents } from '../../../app/events/appEvents'
 import { useNavigate } from 'react-router-dom';
-import { setAccessToken, setRefreshToken, getUser } from '../../../shared/utils/auth'
+import { setAccessToken, setRefreshToken, setUser, getAccessToken } from '../../../shared/utils/auth'
 const AuthContext = createContext(null)
 
+
 export function AuthProvider({ children }) {
-    const [user, setUser] = useState(null)
+    const [user, setUserState] = useState(() => getAccessToken() ? {} : null);
+    const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        // Si hay usuario en localStorage, lo carga al estado
+        const storedUser = getAccessToken() ? {} : null;
+        if (storedUser) {
+            setUserState(storedUser);
+        }
+        setLoading(false);
+    }, []);
 
     const login = async (credentials) => {
         const data = await loginService(credentials)
         if (data.status === 200) {
             setAccessToken(data.data.accessToken)
             setRefreshToken(data.data.refreshToken)
-            getUser()
-            setUser(data.data.user)
+            const meData = await meService()
+            setUserState(meData.data)
+            setUser(meData.data)
             emit(AppEvents.LOGIN_SUCCESS)
             navigate('/dashboard')
         } else {
@@ -25,7 +37,7 @@ export function AuthProvider({ children }) {
     }
 
     return (
-        <AuthContext.Provider value={{ user, login }}>
+        <AuthContext.Provider value={{ user, login, loading }}>
             {children}
         </AuthContext.Provider>
     )
