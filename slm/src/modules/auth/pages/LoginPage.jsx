@@ -7,7 +7,7 @@ export default function LoginPage() {
     <Box
       sx={{
         display: 'flex',
-        flex: 1,           // Cambiado de height: '100%' a flex: 1
+        flex: 1,         
         minHeight: 0,     
         flexDirection: { xs: 'column', md: 'row' }, // columna en móvil, fila en desktop
       }}
@@ -15,7 +15,7 @@ export default function LoginPage() {
       {/* Lado izquierdo */}
       <Box
         sx={{
-          flex: 1,                     // ocupa mitad en desktop
+          flex: 1,                    
           bgcolor: 'primary.main',
           display: 'flex',
           justifyContent: 'center',
@@ -38,7 +38,7 @@ export default function LoginPage() {
       {/* Lado derecho */}
       <Box
         sx={{
-          flex: 1,                     // ocupa mitad en desktop
+          flex: 1,                    
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',

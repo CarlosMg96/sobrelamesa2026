@@ -29,7 +29,7 @@ export const ThemeProvider = ({ children }) => {
             ? {
                 // Configuración del tema claro
                 primary: {
-                  main: '#1976d2',
+                  main: '#1e293b',
                 },
                 secondary: {
                   main: '#dc004e',
@@ -38,7 +38,7 @@ export const ThemeProvider = ({ children }) => {
             : {
                 // Configuración del tema oscuro
                 primary: {
-                  main: '#90caf9',
+                  main: '#142a4d',
                 },
                 secondary: {
                   main: '#f48fb1',

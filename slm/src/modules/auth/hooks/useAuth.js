@@ -36,8 +36,17 @@ export function AuthProvider({ children }) {
         }
     }
 
+    const logout = () => {
+        setAccessToken(null)
+        setRefreshToken(null)
+        setUserState(null)
+        setUser(null)
+        emit(AppEvents.LOGOUT)
+        navigate('/login')
+    }
+
     return (
-        <AuthContext.Provider value={{ user, login, loading }}>
+        <AuthContext.Provider value={{ user, login, loading, logout }}>
             {children}
         </AuthContext.Provider>
     )

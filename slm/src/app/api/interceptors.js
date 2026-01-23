@@ -1,5 +1,6 @@
 import { emit, AppEvents } from '../events/appEvents'
 import { getAccessToken } from '../../shared/utils/auth'
+import { refreshTokenService } from '../../modules/auth/services/auth.service'
 
 export function setupInterceptors(client) {
     client.interceptors.request.use(
@@ -17,17 +18,37 @@ export function setupInterceptors(client) {
 
     client.interceptors.response.use(
         response => response,
-        error => {
+        async error => {
             if (!error.response) {
                 emit(AppEvents.OFFLINE)
                 return Promise.reject(error)
             }
 
-            const { status, data } = error.response
+            const { status, data, config } = error.response;
+
+            // Evitar bucle infinito de refresh
+            if (status === 401 && data?.message === 'Token invalid or expired' && !config._retry) {
+                config._retry = true;
+                try {
+                    const newAccessToken = await refreshTokenService();
+                    if (newAccessToken) {
+                        config.headers.Authorization = `Bearer ${newAccessToken}`;
+                        return client(config);
+                    } else {
+                        emit(AppEvents.UNAUTHORIZED);
+                        return Promise.reject(error);
+                    }
+                } catch (e) {
+                    emit(AppEvents.UNAUTHORIZED);
+                    return Promise.reject(error);
+                }
+            }
 
             switch (status) {
                 case 401:
-                    emit(AppEvents.UNAUTHORIZED)
+                    if (data?.message === 'No token provided') {
+                        emit(AppEvents.UNAUTHORIZED)
+                    }
                     break
 
                 case 403:

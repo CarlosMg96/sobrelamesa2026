@@ -39,6 +39,7 @@ export class AuthService {
     }
 
     const user = await this.repo.findById(payload.id);
+  
     if (!user || !user.hashed_refresh_token) {
       throw new AuthError("User not found or no refresh token", "INVALID_TOKEN");
     }
@@ -64,7 +65,7 @@ export class AuthService {
   }
 
   async me(userId: number) {
-    const user = await this.repo.findById(userId);
+    const user = await this.repo.me(userId);
     if (!user) throw new AuthError("User not found", "USER_NOT_FOUND");
     return user;
   }

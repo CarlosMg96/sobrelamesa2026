@@ -8,6 +8,7 @@ export class EventController {
 
     async getListEvents(req: Request, res: Response) {
         let { pageNumber, pageLength } = req.query;
+        console.log("query", req.query);
         if (!pageNumber || !pageLength) {
             pageNumber = "1";
             pageLength = "100";
