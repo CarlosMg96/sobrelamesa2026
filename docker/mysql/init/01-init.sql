@@ -1,0 +1,3 @@
+-- Coloca aquí tus scripts .sql iniciales (migraciones, schemas, seeds).
+-- Cualquier archivo .sql en esta carpeta se ejecutará automáticamente
+-- la primera vez que se inicialice el contenedor de MySQL.

@@ -194,10 +194,10 @@ export class EventsMySQLRepository implements EventRepository {
         }
     }
 
-    async deleteEvent(event_id: Number): Promise<Event | null> {
+    async deleteEvent(event_id: number): Promise<Event | null> {
         const sql = `DELETE FROM eventos WHERE id = ?`;
         try {
-            const [rows] = await db.query(sql, event_id);
+            const [rows] = await db.query(sql, [event_id]);
             const row = Array.isArray(rows) && rows.length ? rows : null;
             if (!row) {
                 return null

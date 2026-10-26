@@ -1,0 +1,89 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: sobrelamesa_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME:-sobrelamesa}
+      MYSQL_USER: ${DB_USER:-slm_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-slm_password}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p${DB_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - sobrelamesa_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: dev
+    container_name: sobrelamesa_backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    env_file:
+      - ./backend/.env
+    environment:
+      PORT: 3000
+      DB_HOST: mysql
+      DB_USER: ${DB_USER:-slm_user}
+      DB_PASSWORD: ${DB_PASSWORD:-slm_password}
+      DB_NAME: ${DB_NAME:-sobrelamesa}
+      JWT_SECRET: ${JWT_SECRET:-supersecretjwtkey2026}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-supersecretrefreshkey2026}
+      ACCESS_TOKEN_EXPIRE_TOKEN: 1h
+      REFRESH_TOKEN_EXPIRE_TOKEN: 7d
+      CRYPTO_KEY: ${CRYPTO_KEY:-abcdefghijklmnopqrstuvwxyz123456}
+      SECRET_KEY: ${SECRET_KEY:-abcdefghijklmnopqrstuvwxyz123456}
+      SECRET_IV: ${SECRET_IV:-abcdefghijklmnop}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3001}
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - sobrelamesa_network
+
+  frontend:
+    build:
+      context: ./slm
+      dockerfile: Dockerfile
+      target: dev
+    container_name: sobrelamesa_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-3001}:3001"
+    env_file:
+      - ./slm/.env
+    environment:
+      PORT: 3001
+      REACT_APP_SERVER_URL: ${REACT_APP_SERVER_URL:-http://localhost:3000}
+      CHOKIDAR_USEPOLLING: "true"
+      WDS_SOCKET_PORT: "0"
+    volumes:
+      - ./slm:/app
+      - /app/node_modules
+    networks:
+      - sobrelamesa_network
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  sobrelamesa_network:
+    driver: bridge

@@ -60,7 +60,6 @@ Thumbs.db
 *.d.ts.map
 *.d.ts
 
-# optional: lockfiles for alternative package managers (uncomment if you use them locally and don't want to commit)
-/pnpm-lock.yaml
+
 
 .test_output.txt
