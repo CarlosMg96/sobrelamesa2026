@@ -563,122 +563,123 @@ export default function ListEvents() {
         </div>
       </div>
 
-      {/* FLOATING TABLE (Identical to legacy structure) */}
-      <div className="table-responsive table-events-wrapper">
-        <table className="table table-borderless table-custom">
-          <thead>
-            <tr>
-              <th className="text-center" style={{ width: '11%' }}>Folio</th>
-              <th className="text-center" style={{ width: '10%' }}>Estatus de Ventas</th>
-              <th className="text-center" style={{ width: '9%' }}>Inventario</th>
-              <th className="text-center" style={{ width: '14%' }}>Cliente / Contacto</th>
-              <th className="text-center" style={{ width: '12%' }}>Table Solver</th>
-              <th className="text-center" style={{ width: '11%' }}>Pagos</th>
-              <th className="text-center" style={{ width: '11%' }}>Depósito</th>
-              <th className="text-center" style={{ width: '13%' }}>Logística</th>
-              <th className="text-center" style={{ width: '10%' }}>Estado Logística</th>
-              <th className="text-center" style={{ width: '9%' }}>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
+      {/* TABLA PRINCIPAL HOMOGENIZADA */}
+      <div className="slm-table-card">
+        <div className="table-responsive">
+          <table className="table table-custom">
+            <thead>
               <tr>
-                <td colSpan={10} className="text-center py-5">
-                  <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Cargando...</span>
-                  </div>
-                  <div className="text-muted small mt-2">Cargando cotizaciones...</div>
-                </td>
+                <th className="text-center" style={{ width: '10%' }}>Folio</th>
+                <th className="text-center" style={{ width: '10%' }}>Estatus de Ventas</th>
+                <th className="text-center" style={{ width: '9%' }}>Inventario</th>
+                <th className="text-start ps-3" style={{ width: '15%' }}>Cliente / Contacto</th>
+                <th className="text-start ps-3" style={{ width: '12%' }}>Table Solver</th>
+                <th className="text-center" style={{ width: '11%' }}>Pagos</th>
+                <th className="text-center" style={{ width: '11%' }}>Depósito</th>
+                <th className="text-start ps-3" style={{ width: '13%' }}>Logística</th>
+                <th className="text-center" style={{ width: '10%' }}>Estado Logística</th>
+                <th className="text-center" style={{ width: '9%' }}>Acciones</th>
               </tr>
-            ) : events.length === 0 ? (
-              <tr>
-                <td colSpan={10} className="text-center py-5 text-muted">
-                  No se encontraron cotizaciones con los filtros seleccionados.
-                </td>
-              </tr>
-            ) : (
-              events.map((evt) => {
-                const isDropdownOpen = openDropdownId === evt.id;
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={10} className="text-center py-5">
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">Cargando...</span>
+                    </div>
+                    <div className="text-muted small mt-2">Cargando cotizaciones...</div>
+                  </td>
+                </tr>
+              ) : events.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="text-center py-5 text-muted">
+                    No se encontraron cotizaciones con los filtros seleccionados.
+                  </td>
+                </tr>
+              ) : (
+                events.map((evt) => {
+                  const isDropdownOpen = openDropdownId === evt.id;
 
-                return (
-                  <tr key={evt.id}>
-                    {/* 1. FOLIO */}
-                    <td className="text-center align-middle">
-                      <div className="d-flex flex-column align-items-center">
-                        <div className="d-flex align-items-center gap-1">
-                          <span className="fw-bold">CO-00{evt.id}</span>
-                          {(evt.status_firmas || evt.firma) && (
-                            <span
-                              className="cat-badge-icon"
-                              title="Cotización Firmada"
-                              style={{ width: 20, height: 20, fontSize: '0.65rem' }}
-                            >
-                              <i className="bi bi-pen"></i>
-                            </span>
+                  return (
+                    <tr key={evt.id}>
+                      {/* 1. FOLIO */}
+                      <td className="text-center align-middle">
+                        <div className="d-flex flex-column align-items-center">
+                          <div className="d-flex align-items-center gap-1">
+                            <span className="fw-bold">CO-00{evt.id}</span>
+                            {(evt.status_firmas || evt.firma) && (
+                              <span
+                                className="cat-badge-icon"
+                                title="Cotización Firmada"
+                                style={{ width: 20, height: 20, fontSize: '0.65rem' }}
+                              >
+                                <i className="bi bi-pen"></i>
+                              </span>
+                            )}
+                          </div>
+                          {renderCategoryIcons(evt.categorias)}
+                        </div>
+                      </td>
+
+                      {/* 2. ESTATUS DE VENTAS */}
+                      <td className="text-center align-middle">
+                        {renderStatusBadge(evt.estatus)}
+                      </td>
+
+                      {/* 3. INVENTARIO */}
+                      <td className="text-center align-middle">
+                        {Number(evt.status_sobrevendido) === 1 ? (
+                          <span className="badge badge-custom badge-sobrevendido">Sobrevendido</span>
+                        ) : (
+                          <span className="badge badge-custom badge-disponible">Disponible</span>
+                        )}
+                      </td>
+
+                      {/* 4. CLIENTE / CONTACTO */}
+                      <td className="text-start ps-3 align-middle">
+                        <div>
+                          <div className="fw-bold text-dark">{evt.cliente || '-'}</div>
+                          {evt.empresa && (
+                            <div className="text-muted small text-uppercase">{evt.empresa}</div>
+                          )}
+                          {evt.num_tel ? (
+                            <div className="text-muted small">
+                              <i className="bi bi-telephone-fill me-1"></i>
+                              {evt.num_tel}
+                            </div>
+                          ) : (
+                            <div className="text-muted small">
+                              <i className="bi bi-telephone-fill"></i>
+                            </div>
                           )}
                         </div>
-                        {renderCategoryIcons(evt.categorias)}
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* 2. ESTATUS DE VENTAS */}
-                    <td className="text-center align-middle">
-                      {renderStatusBadge(evt.estatus)}
-                    </td>
+                      {/* 5. TABLE SOLVER */}
+                      <td className="text-start ps-3 align-middle">
+                        <span className="fw-medium">{evt.agente || 'Desconocido'}</span>
+                      </td>
 
-                    {/* 3. INVENTARIO */}
-                    <td className="text-center align-middle">
-                      {Number(evt.status_sobrevendido) === 1 ? (
-                        <span className="badge badge-custom badge-sobrevendido">Sobrevendido</span>
-                      ) : (
-                        <span className="badge badge-custom badge-disponible">Disponible</span>
-                      )}
-                    </td>
+                      {/* 6. PAGOS */}
+                      <td className="text-center align-middle">
+                        {renderPaymentBadge(evt)}
+                      </td>
 
-                    {/* 4. CLIENTE / CONTACTO */}
-                    <td className="text-center align-middle">
-                      <div>
-                        <div className="fw-bold">{evt.cliente || '-'}</div>
-                        {evt.empresa && (
-                          <div className="text-muted small text-uppercase">{evt.empresa}</div>
-                        )}
-                        {evt.num_tel ? (
-                          <div className="text-muted small">
-                            <i className="bi bi-telephone-fill me-1"></i>
-                            {evt.num_tel}
-                          </div>
-                        ) : (
-                          <div className="text-muted small">
-                            <i className="bi bi-telephone-fill"></i>
-                          </div>
-                        )}
-                      </div>
-                    </td>
+                      {/* 7. DEPÓSITO */}
+                      <td className="text-center align-middle">
+                        {renderDepositBadge(evt)}
+                      </td>
 
-                    {/* 5. TABLE SOLVER */}
-                    <td className="text-center align-middle">
-                      <span className="fw-medium">{evt.agente || 'Desconocido'}</span>
-                    </td>
-
-                    {/* 6. PAGOS */}
-                    <td className="text-center align-middle">
-                      {renderPaymentBadge(evt)}
-                    </td>
-
-                    {/* 7. DEPÓSITO */}
-                    <td className="text-center align-middle">
-                      {renderDepositBadge(evt)}
-                    </td>
-
-                    {/* 8. LOGÍSTICA */}
-                    <td className="text-center align-middle">
-                      <div className="small">
-                        <span className="text-muted d-block">Fecha del Evento:</span>
-                        <span className="fw-medium text-capitalize">
-                          {formatDateES(evt.fecha_evento)}
-                        </span>
-                      </div>
-                    </td>
+                      {/* 8. LOGÍSTICA */}
+                      <td className="text-start ps-3 align-middle">
+                        <div className="small">
+                          <span className="text-muted d-block">Fecha del Evento:</span>
+                          <span className="fw-medium text-capitalize">
+                            {formatDateES(evt.fecha_evento)}
+                          </span>
+                        </div>
+                      </td>
 
                     {/* 9. ESTADO LOGÍSTICA */}
                     <td className="text-center align-middle">
@@ -857,6 +858,7 @@ export default function ListEvents() {
           </tbody>
         </table>
       </div>
+    </div>
 
       {/* PAGINATION CONTROLS (Identical to legacy) */}
       <div className="slm-pagination-row">

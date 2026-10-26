@@ -769,11 +769,33 @@ body,
   cursor: not-allowed !important;
 }
 
-/* Floating Table Style */
+/* ==========================================================================
+   HOMOGENIZED TABLE DESIGN SYSTEM (.slm-table-card, .table-custom)
+   ========================================================================== */
+
+/* 1. Main Table Card Container (Ensures table is cleanly framed, not floating) */
+.slm-table-card {
+  background-color: var(--slm-card-bg) !important;
+  border: var(--slm-card-border) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--slm-card-shadow) !important;
+  overflow: hidden !important;
+  margin-bottom: 1.5rem !important;
+  transition: all 0.25s ease;
+}
+
+[data-theme="dark"] .slm-table-card {
+  background-color: #111827 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* 2. Structured Table Style */
 .table-custom {
   width: 100% !important;
-  border-collapse: separate !important;
-  border-spacing: 0 0.5rem !important;
+  margin-bottom: 0 !important;
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
   --bs-table-bg: transparent !important;
   --bs-table-color: var(--slm-text-title) !important;
   background-color: transparent !important;
@@ -783,15 +805,28 @@ body,
   box-shadow: none !important;
 }
 
+/* 3. Solid, Anchored Header Bar (Eliminates floating text) */
+.table-custom thead {
+  background-color: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="dark"] .table-custom thead {
+  background-color: #1e293b !important;
+  border-bottom: 1px solid #334155 !important;
+}
+
 .table-custom thead th {
   border: none !important;
   background-color: transparent !important;
-  color: var(--slm-text-subtitle) !important;
+  color: #475569 !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
-  font-size: 0.75rem !important;
-  padding: 0.85rem 1rem !important;
-  letter-spacing: 0.5px;
+  font-size: 0.72rem !important;
+  padding: 1rem 1rem !important;
+  letter-spacing: 0.6px !important;
+  white-space: nowrap !important;
+  vertical-align: middle !important;
 }
 
 [data-theme="dark"] .table-custom thead th {
@@ -799,63 +834,59 @@ body,
   background-color: transparent !important;
 }
 
+/* 4. Homogeneous Table Rows */
 .table-custom tbody tr {
   background-color: var(--slm-card-bg) !important;
   color: var(--slm-text-title) !important;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-bottom: 1px solid #edf2f7 !important;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.table-custom tbody tr:last-child {
+  border-bottom: none !important;
 }
 
 [data-theme="dark"] .table-custom tbody tr {
-  background-color: #1e293b !important;
+  background-color: #111827 !important;
   color: #f8fafc !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  border-bottom: 1px solid #1f2937 !important;
+  box-shadow: none !important;
 }
 
 .table-custom tbody tr:hover {
-  box-shadow: var(--slm-card-hover-shadow) !important;
-  transform: translateY(-1px);
+  background-color: #f8fafc !important;
 }
 
+[data-theme="dark"] .table-custom tbody tr:hover {
+  background-color: #1e293b !important;
+}
+
+/* 5. Clean Cell Padding & Typography */
 .table-custom tbody td {
-  padding: 1rem !important;
+  padding: 1rem 1rem !important;
   vertical-align: middle !important;
-  background-color: var(--slm-card-bg) !important;
+  background-color: transparent !important;
   color: var(--slm-text-title) !important;
-  border-top: 1px solid #edf2f7 !important;
-  border-bottom: 1px solid #edf2f7 !important;
-  font-size: 0.9rem;
+  border: none !important;
+  font-size: 0.88rem !important;
 }
 
 [data-theme="dark"] .table-custom tbody td {
-  background-color: #1e293b !important;
+  background-color: transparent !important;
   color: #f8fafc !important;
-  border-top: 1px solid #334155 !important;
-  border-bottom: 1px solid #334155 !important;
+  border: none !important;
 }
 
-.table-custom tbody tr td:first-child {
-  border-top-left-radius: 10px !important;
-  border-bottom-left-radius: 10px !important;
-  border-left: 1px solid #edf2f7 !important;
-}
-
-[data-theme="dark"] .table-custom tbody tr td:first-child {
-  border-left: 1px solid #334155 !important;
-}
-
-.table-custom tbody tr td:last-child {
-  border-top-right-radius: 10px !important;
-  border-bottom-right-radius: 10px !important;
-  border-right: 1px solid #edf2f7 !important;
-}
-
-[data-theme="dark"] .table-custom tbody tr td:last-child {
-  border-right: 1px solid #334155 !important;
+.table-custom tbody tr.selected {
+  background-color: rgba(13, 110, 253, 0.05) !important;
 }
 
 .table-custom tbody tr.selected td:first-child {
-  border-left: 3px solid #0d6efd !important;
+  box-shadow: inset 4px 0 0 #0d6efd !important;
+}
+
+[data-theme="dark"] .table-custom tbody tr.selected {
+  background-color: rgba(13, 110, 253, 0.12) !important;
 }
 
 [data-theme="dark"] .table-custom tbody tr strong,
