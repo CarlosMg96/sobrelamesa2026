@@ -1,93 +1,90 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import {
-  Box,
-  CssBaseline,
-  Drawer,
-  useTheme,
-  Toolbar
-} from '@mui/material';
 import Navbar from '../components/Navbar';
-import SidebarMenu from '../components/SidebarMenu';
-import { useAuth } from '../modules/auth/hooks/useAuth';
+import Sidebar from '../components/Sidebar';
 
-const drawerWidth = 240;
-
-const TITLES = {
-  '/dashboard': 'Dashboard',
-  '/events': 'Eventos',
-  '/products': 'Productos',
+const ROUTE_TITLES = {
+  '/dashboard': 'Inicio',
+  '/calendar': 'Agenda',
+  '/events': 'Cotizaciones y Eventos',
+  '/products': 'Catálogo de Inventario',
+  '/inventory-daily': 'Inventario por Día',
+  '/events/warehouse': 'Eventos en Curso (Almacén)',
+  '/users': 'Administración de Usuarios',
+  '/income': 'Registro de Ingresos',
+  '/events/clients': 'Eventos por Cliente',
+  '/reports': 'Reportes y Analítica',
+  '/settings': 'Configuración General',
 };
 
 const PrivateLayout = () => {
-  const theme = useTheme();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const { logout } = useAuth();
   const location = useLocation();
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
+  // Persistir preferencia de sidebar mini en localStorage
+  const [isMini, setIsMini] = useState(() => {
+    return localStorage.getItem('sidebar-mini') === 'true';
+  });
+
+  // Estado para mobile drawer
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('sidebar-mini', String(isMini));
+  }, [isMini]);
+
+  // Si cambia de ruta, cerrar el drawer mobile automáticamente
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [location.pathname]);
+
+  const handleToggleMini = () => {
+    setIsMini((prev) => !prev);
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleToggleSidebar = () => {
+    if (window.innerWidth < 1200) {
+      setIsMobileOpen((prev) => !prev);
+    } else {
+      setIsMini((prev) => !prev);
+    }
   };
 
-  const title = TITLES[location.pathname] || 'Panel de Control';
+  const title = ROUTE_TITLES[location.pathname] || 'Sobre La Mesa';
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      <CssBaseline />
-      <Navbar onMenuClick={handleDrawerToggle} title={title} />
-      <Box
-        component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-        aria-label="mailbox folders"
-      >
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true,
-          }}
-          sx={{
-            display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: drawerWidth,
-            },
-          }}
-        >
-          <SidebarMenu onLogout={handleLogout} />
-        </Drawer>
-        <Drawer
-          variant="permanent"
-          sx={{
-            display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: drawerWidth,
-            },
-          }}
-          open
-        >
-          <SidebarMenu onLogout={handleLogout} />
-        </Drawer>
-      </Box>
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          p: 3,
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          mt: { xs: 8, sm: 0 },
-        }}
-      >
-        <Toolbar />
-        <Outlet />
-      </Box>
-    </Box>
+    <div
+      className={`slm-layout-wrapper ${isMini ? 'sidebar-mini' : ''} ${
+        isMobileOpen ? 'sidebar-show' : ''
+      }`}
+    >
+      {/* Mobile Backdrop Overlay */}
+      {isMobileOpen && (
+        <div
+          className="slm-sidebar-overlay"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
+      {/* Modern Gradient Sidebar */}
+      <Sidebar
+        isMini={isMini}
+        onToggleMini={handleToggleMini}
+        onCloseMobile={() => setIsMobileOpen(false)}
+      />
+
+      {/* Main Page Content Wrapper */}
+      <div className="slm-page-wrapper">
+        <Navbar
+          onToggleSidebar={handleToggleSidebar}
+          isMini={isMini}
+          title={title}
+        />
+
+        <main className="slm-main-content">
+          <Outlet />
+        </main>
+      </div>
+    </div>
   );
 };
 

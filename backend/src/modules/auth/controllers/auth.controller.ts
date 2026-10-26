@@ -48,10 +48,14 @@ export const authController = new (class AuthController {
   logout = async (req, res) => {
     try {
       const userId = (req as any).user?.id;
-      if (!userId) {
-        return sendResponse(res, 401, "Unauthorized");
+      if (userId) {
+        await service.logout(userId);
       }
-      await service.logout(userId);
+      res.clearCookie("token", { path: "/" });
+      res.clearCookie("accessToken", { path: "/" });
+      res.clearCookie("refreshToken", { path: "/" });
+      res.clearCookie("connect.sid", { path: "/" });
+      res.clearCookie("session", { path: "/" });
       return sendResponse(res, 200, "Logout successful");
     } catch (error) {
       console.error("Error in logout:", error);

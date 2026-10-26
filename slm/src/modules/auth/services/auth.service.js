@@ -1,20 +1,19 @@
-
 import axiosClientApi from '../../../app/api/httpClient'
-import { getRefreshToken, setAccessToken, setRefreshToken } from '../../../shared/utils/auth'
+import { getRefreshToken, setAccessToken, setRefreshToken, clearAuthData } from '../../../shared/utils/auth'
 
 export const refreshTokenService = async () => {
-    const refreshToken = getRefreshToken();
-    if (!refreshToken) return null;
+    const refreshToken = getRefreshToken()
+    if (!refreshToken) return null
     try {
-        const { data } = await axiosClientApi.doPost('/auth/refresh', { refreshToken });
+        const { data } = await axiosClientApi.doPost('/auth/refresh', { refreshToken })
         if (data?.accessToken) {
-            setAccessToken(data.accessToken);
-            setRefreshToken(data.refreshToken);
-            return data.accessToken;
+            setAccessToken(data.accessToken)
+            setRefreshToken(data.refreshToken)
+            return data.accessToken
         }
-        return null;
+        return null
     } catch (e) {
-        return null;
+        return null
     }
 }
 
@@ -28,8 +27,14 @@ export const loginService = async (credentials) => {
     }
 }
 
-export const logoutService = () => {
-    localStorage.removeItem('token')
+export const logoutService = async () => {
+    try {
+        await axiosClientApi.doPost('/auth/logout')
+    } catch (error) {
+        console.warn('Advertencia en /auth/logout del backend:', error)
+    } finally {
+        clearAuthData()
+    }
     return Promise.resolve()
 }
 

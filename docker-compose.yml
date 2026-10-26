@@ -12,7 +12,6 @@ services:
       - "${DB_PORT:-3306}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p${DB_ROOT_PASSWORD:-rootpassword}"]
       interval: 10s
@@ -39,6 +38,7 @@ services:
     environment:
       PORT: 3000
       DB_HOST: mysql
+      DB_PORT: 3306
       DB_USER: ${DB_USER:-slm_user}
       DB_PASSWORD: ${DB_PASSWORD:-slm_password}
       DB_NAME: ${DB_NAME:-sobrelamesa}
