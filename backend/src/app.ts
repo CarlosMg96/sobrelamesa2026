@@ -13,7 +13,12 @@ app.use(cors({
 app.use(express.json());
 
 app.use("/api/auth", authModule.routes);
+app.use("/auth", authModule.routes);
+
 app.use("/api/events", eventModule.routes);
+app.use("/events", eventModule.routes);
+
 app.use("/api/products", productModule.routes);
+app.use("/products", productModule.routes);
 
 export default app;
