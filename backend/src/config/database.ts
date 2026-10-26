@@ -6,8 +6,12 @@ let pool: Pool;
 
 export const createPool = () => {
     if (!pool) {
+        const isDockerHost = process.env.DB_HOST === 'mysql';
+        const port = isDockerHost ? 3306 : (Number(process.env.DB_PORT) || 3306);
+
         pool = mysql.createPool({
             host: process.env.DB_HOST || 'localhost',
+            port: port,
             user: process.env.DB_USER || 'root',
             password: process.env.DB_PASSWORD || '',
             database: process.env.DB_NAME || 'my_database',

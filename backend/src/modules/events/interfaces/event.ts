@@ -17,14 +17,34 @@ export interface Event {
     tipo_pago: number;
     domicilio_entrega?: string;
     domicilio_recoleccion?: string;
-    status_entrega?: string;
+    status_entrega?: string | number;
     lavado_desinfeccion?: string;
     descuento?: number;
     correct_datos?: boolean;
     accept_politicas?: boolean;
     url_seguimiento?: string;
     descuento_lavado?: number;
+    firma?: string;
     firma_logistica?: string;
+    status_firmas?: string;
+    status_recibido?: number;
+    status_pago?: number;
+    status_deposito?: number;
     created_at?: string;
     updated_at?: string;
+    tipo_horario_entrega?: string;
+    tipo_horario_recoleccion?: string;
+    hora_entrega_fin?: string;
+    hora_recoleccion_fin?: string;
+    // Joined / Computed fields
+    cliente?: string;
+    num_tel?: string;
+    email?: string;
+    empresa?: string;
+    agente?: string;
+    tipo_evento_nombre?: string;
+    categorias?: string;
+    status_sobrevendido?: boolean | number;
+    ultimo_comentario?: string;
+    filtrado_por?: string;
 }

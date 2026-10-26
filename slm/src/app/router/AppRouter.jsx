@@ -7,6 +7,7 @@ import Page404 from '../../modules/errors/pages/404';
 import PublicLayout from '../../layouts/PublicLayout';
 import PrivateLayout from '../../layouts/PrivateLayout';
 import ListEvents from '../../modules/events/pages/listEvents';
+import CalendarPage from '../../modules/events/pages/calendar';
 import Quote from '../../modules/events/pages/quote';
 import ListProducts from '../../modules/products/pages/listProducts';
 
@@ -36,6 +37,7 @@ export function AppRouter() {
       {/* Rutas privadas */}
       <Route element={<PrivateRoute><PrivateLayout /></PrivateRoute>}>
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/events" element={<ListEvents />} />
         <Route path="/products" element={<ListProducts />} />
       </Route>

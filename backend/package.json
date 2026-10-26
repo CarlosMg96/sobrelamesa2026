@@ -6,7 +6,11 @@
   "scripts": {
     "test": "jest",
     "build": "tsc",
-    "dev": "nodemon --exec ts-node src/server.ts"
+    "dev": "nodemon --exec ts-node src/server.ts",
+    "hash:passwords": "ts-node scripts/update-passwords.ts",
+    "migrate": "ts-node src/database/migrator.ts up",
+    "migrate:status": "ts-node src/database/migrator.ts status",
+    "migrate:create": "ts-node src/database/migrator.ts create"
   },
   "keywords": [],
   "author": "",
