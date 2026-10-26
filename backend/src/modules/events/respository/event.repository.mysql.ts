@@ -398,6 +398,96 @@ export class EventsMySQLRepository implements EventRepository {
         }
     }
 
+    async getCalendarEvents(startDate: string, endDate: string, filterByDate: string = 'event_date'): Promise<Event[]> {
+        try {
+            const baseSelect = `
+                SELECT evento.*, 
+                       cliente.full_name AS cliente,
+                       cliente.num_tel,
+                       cliente.email,
+                       empresas.empresa,
+                       users.name AS agente,
+                       tipo_evento.evento AS tipo_evento_nombre,
+                       GROUP_CONCAT(DISTINCT categorias_producto_por_evento.categoria_id) AS categorias,
+                       (SELECT COUNT(*) FROM producto_autorizado 
+                        WHERE producto_autorizado.evento_id = evento.id) > 0 AS status_sobrevendido,
+                       (SELECT c.comentario FROM comentarios_internos c 
+                        WHERE c.evento_id = evento.id ORDER BY c.id DESC LIMIT 1) AS ultimo_comentario
+                FROM evento
+                LEFT JOIN persona_fisica AS cliente ON cliente.id = evento.cliente_id
+                LEFT JOIN empresas ON empresas.id = cliente.empresa_id
+                LEFT JOIN users ON users.id = evento.agente_id
+                LEFT JOIN tipo_evento ON tipo_evento.id = evento.tipo_evento
+                LEFT JOIN categorias_producto_por_evento ON categorias_producto_por_evento.evento_id = evento.id
+            `;
+
+            const results: Event[] = [];
+
+            if (filterByDate === 'start_date' || filterByDate === 'fecha_entrega') {
+                const sql = `
+                    ${baseSelect}
+                    WHERE evento.fecha_entrega BETWEEN ? AND ?
+                    GROUP BY evento.id
+                    ORDER BY evento.fecha_entrega ASC, evento.hora_entrega ASC
+                `;
+                const [rows] = await db.query<RowDataPacket[]>(sql, [startDate, endDate]);
+                rows.forEach(r => {
+                    results.push({ ...(r as any), filtrado_por: 'fecha_entrega' });
+                });
+            } else if (filterByDate === 'end_date' || filterByDate === 'fecha_recoleccion') {
+                const sql = `
+                    ${baseSelect}
+                    WHERE evento.fecha_recoleccion BETWEEN ? AND ?
+                    GROUP BY evento.id
+                    ORDER BY evento.fecha_recoleccion ASC, evento.hora_recoleccion ASC
+                `;
+                const [rows] = await db.query<RowDataPacket[]>(sql, [startDate, endDate]);
+                rows.forEach(r => {
+                    results.push({ ...(r as any), filtrado_por: 'fecha_recoleccion' });
+                });
+            } else {
+                // Default: Both deliveries and collections in the date window
+                const sqlDeliveries = `
+                    ${baseSelect}
+                    WHERE evento.fecha_entrega BETWEEN ? AND ?
+                    GROUP BY evento.id
+                    ORDER BY evento.fecha_entrega ASC, evento.hora_entrega ASC
+                `;
+                const [delRows] = await db.query<RowDataPacket[]>(sqlDeliveries, [startDate, endDate]);
+                delRows.forEach(r => {
+                    results.push({ ...(r as any), filtrado_por: 'fecha_entrega' });
+                });
+
+                const sqlCollections = `
+                    ${baseSelect}
+                    WHERE evento.fecha_recoleccion BETWEEN ? AND ?
+                    GROUP BY evento.id
+                    ORDER BY evento.fecha_recoleccion ASC, evento.hora_recoleccion ASC
+                `;
+                const [colRows] = await db.query<RowDataPacket[]>(sqlCollections, [startDate, endDate]);
+                colRows.forEach(r => {
+                    results.push({ ...(r as any), filtrado_por: 'fecha_recoleccion' });
+                });
+            }
+
+            return results;
+        } catch (error) {
+            console.error('Error in getCalendarEvents', error);
+            return [];
+        }
+    }
+
+    async addComment(eventoId: number, comment: string, userId: number, userName: string): Promise<any> {
+        try {
+            const sql = `INSERT INTO comentarios_internos (evento_id, comentario, user_id, user_name) VALUES (?, ?, ?, ?)`;
+            const [res] = await db.query(sql, [eventoId, comment, userId || 0, userName || 'Usuario']);
+            return res;
+        } catch (error) {
+            console.error('Error in addComment', error);
+            throw error;
+        }
+    }
+
     async getEvent(event_id: Number): Promise<Event | null> {
         const sql = `SELECT * FROM evento WHERE id = ?`;
 
@@ -412,7 +502,8 @@ export class EventsMySQLRepository implements EventRepository {
             const event = rows[0] as Event;
             return event;
         } catch (error) {
-            console.error('Error in getEvent', error)
+            console.error('Error in getEvent', error);
+            return null;
         }
     }
 

@@ -1701,4 +1701,185 @@ body,
   text-decoration: underline;
 }
 
+/* ==========================================================================
+   AGENDA / CALENDAR VIEW STYLES
+   ========================================================================== */
+.card-dashboard {
+  background-color: var(--slm-card-bg, #fff);
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.filter-section {
+  background-color: var(--slm-card-bg, #fff);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.separator {
+  width: 1.5px;
+  height: 38px;
+  background-color: #dee2e6;
+  margin: 0 8px;
+  align-self: center;
+}
+
+[data-theme="dark"] .separator {
+  background-color: #334155;
+}
+
+.date-picker-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f0f7ff;
+  border: 1px solid #cce3ff;
+  border-radius: 50px;
+  padding: 0.5rem 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="dark"] .date-picker-wrapper {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+.date-picker-wrapper:hover {
+  box-shadow: 0 4px 8px rgba(13, 110, 253, 0.12);
+  background-color: #e5f1ff;
+}
+
+.table-calendar {
+  width: 100% !important;
+  margin-bottom: 0 !important;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.table-calendar th {
+  background-color: #f8fafc;
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .table-calendar th {
+  background-color: #1e293b;
+  color: #94a3b8;
+  border-color: #334155;
+}
+
+.table-calendar td {
+  padding: 0.85rem 1rem;
+  vertical-align: middle;
+  font-size: 0.875rem;
+  border-bottom: 1px solid #edf2f7;
+  color: var(--slm-text-title, #1e293b);
+}
+
+[data-theme="dark"] .table-calendar td {
+  border-color: #334155;
+}
+
+.table-calendar tr.date-group-header td {
+  background-color: #f8f9fa !important;
+  color: #1e293b !important;
+  font-weight: 700 !important;
+  font-size: 0.95rem !important;
+  padding: 0.75rem 1rem !important;
+  border-top: 1px solid #dee2e6;
+  border-bottom: 1px solid #dee2e6;
+}
+
+[data-theme="dark"] .table-calendar tr.date-group-header td {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+.badge-schedule-open {
+  background-color: #6c757d;
+  color: #ffffff;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-schedule-range {
+  background-color: #d97706;
+  color: #ffffff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin-right: 0.35rem;
+}
+
+.badge-schedule-specific {
+  background-color: #0284c7;
+  color: #ffffff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin-right: 0.35rem;
+}
+
+.btn-blue-dark {
+  background-color: #2a3a7a;
+  color: #ffffff;
+  border: 1px solid #2a3a7a;
+}
+
+.btn-blue-dark.inactive {
+  background-color: transparent !important;
+  color: #2a3a7a !important;
+  border: 1px solid #2a3a7a !important;
+}
+
+.btn-authorized {
+  background-color: #e0dbff;
+  color: #5a3dff;
+  border: 1px solid #5a3dff;
+}
+
+.btn-authorized.inactive {
+  background-color: transparent !important;
+  color: #5a3dff !important;
+  border: 1px solid #5a3dff !important;
+}
+
+.comment-bubble-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: #00b4d8;
+  border: 1.5px solid #00b4d8;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.comment-bubble-btn:hover {
+  background: #00b4d8;
+  color: #fff;
+  transform: scale(1.05);
+}
+
 

@@ -32,6 +32,10 @@ export interface Event {
     status_deposito?: number;
     created_at?: string;
     updated_at?: string;
+    tipo_horario_entrega?: string;
+    tipo_horario_recoleccion?: string;
+    hora_entrega_fin?: string;
+    hora_recoleccion_fin?: string;
     // Joined / Computed fields
     cliente?: string;
     num_tel?: string;
@@ -41,4 +45,6 @@ export interface Event {
     tipo_evento_nombre?: string;
     categorias?: string;
     status_sobrevendido?: boolean | number;
+    ultimo_comentario?: string;
+    filtrado_por?: string;
 }

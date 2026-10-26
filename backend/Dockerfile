@@ -1,5 +1,5 @@
 # Base stage para dependencias con pnpm
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 RUN npm install -g pnpm@10
 
 WORKDIR /app
@@ -24,7 +24,7 @@ FROM base AS build
 RUN pnpm run build
 
 # Target para producción optimizado
-FROM node:20-alpine AS prod
+FROM node:22-alpine AS prod
 RUN npm install -g pnpm@10
 
 WORKDIR /app

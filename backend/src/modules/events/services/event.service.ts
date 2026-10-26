@@ -49,4 +49,12 @@ export class EventService {
         }
         return result;
     }
+
+    async getCalendarEvents(startDate: string, endDate: string, filterByDate?: string): Promise<Event[]> {
+        return await this.repo.getCalendarEvents(startDate, endDate, filterByDate);
+    }
+
+    async addComment(eventoId: number, comment: string, userId: number, userName: string): Promise<any> {
+        return await this.repo.addComment(eventoId, comment, userId, userName);
+    }
 }

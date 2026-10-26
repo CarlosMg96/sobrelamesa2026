@@ -17,6 +17,8 @@ export interface EventQueryParams {
 
 export interface EventRepository {
     getListEvents(params: EventQueryParams): Promise<{ data: Event[], pagination: any, countEventsByAuthorizing?: number } | null>;
+    getCalendarEvents(startDate: string, endDate: string, filterByDate?: string): Promise<Event[]>;
+    addComment(eventoId: number, comment: string, userId: number, userName: string): Promise<any>;
     getEvent(event_id: Number): Promise<Event | null>;
     getSolvers(): Promise<{ id: number; name: string }[]>;
     createEvent(data: Array<Event>): Promise<Event | null>;
