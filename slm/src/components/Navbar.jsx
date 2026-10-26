@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useAuth } from '../modules/auth/hooks/useAuth';
+import ThemeToggle from './ThemeToggle';
 
 const Navbar = ({ onToggleSidebar, isMini, title = 'Panel de Control' }) => {
   const { user, logout } = useAuth();
@@ -47,6 +48,9 @@ const Navbar = ({ onToggleSidebar, isMini, title = 'Panel de Control' }) => {
 
       {/* RIGHT: Notifications & User Avatar */}
       <div className="slm-navbar-right">
+        {/* Theme Switch Claro / Oscuro */}
+        <ThemeToggle />
+
         {/* Notificaciones */}
         <button
           type="button"
