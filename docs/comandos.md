@@ -53,7 +53,51 @@ docker compose down -v
 
 ---
 
-## 2. Script de Actualización de Contraseñas (`pwd` ➡️ `password`)
+## 2. Migraciones de Base de Datos (Backend)
+
+Las modificaciones de esquema (creación de tablas, columnas, índices, alter table) se gestionan exclusivamente desde el backend en `backend/src/database/migrations/` y su historial se audita automáticamente en la tabla `_migrations`.
+
+> **Nota de arquitectura:** La carpeta previa `docker/mysql/init/` fue eliminada ya que la inicialización de esquemas pertenece al ciclo de vida del backend y no al contenedor de base de datos.
+
+### Ejecutar migraciones pendientes
+- **Dentro de Docker:**
+  ```bash
+  docker compose exec backend pnpm run migrate
+  ```
+- **En local:**
+  ```bash
+  pnpm --dir backend run migrate
+  ```
+
+### Ver el estado de las migraciones (Aplicadas vs Pendientes)
+Muestra una tabla con el estado, lote (`batch`), archivo y fecha de aplicación:
+- **Dentro de Docker:**
+  ```bash
+  docker compose exec backend pnpm run migrate:status
+  ```
+- **En local:**
+  ```bash
+  pnpm --dir backend run migrate:status
+  ```
+
+### Crear una nueva migración
+Genera un archivo `.sql` numerado correlativamente (ej. `0002_migrar_clientes.sql`) en `backend/src/database/migrations/`:
+- **Dentro de Docker:**
+  ```bash
+  docker compose exec backend pnpm run migrate:create <nombre_de_migracion>
+  ```
+- **En local:**
+  ```bash
+  pnpm --dir backend run migrate:create <nombre_de_migracion>
+  ```
+
+### Tipos de archivos de migración soportados
+1. **Archivos `.sql` (Predeterminado):** Escribe sentencias SQL estándar separadas por punto y coma.
+2. **Archivos `.ts`:** Puedes exportar una función asíncrona `export async function up(connection) { ... }` para lógica dinámica o transformación de datos.
+
+---
+
+## 3. Script de Actualización de Contraseñas (`pwd` ➡️ `password`)
 
 El script lee las contraseñas en texto claro de la columna `pwd`, genera un hash `bcrypt` (10 rounds) y actualiza la columna `password` en la tabla `users`.
 
@@ -80,7 +124,7 @@ Puedes pasar el email como parámetro:
 
 ---
 
-## 3. Comandos de Monorrepo con PNPM
+## 4. Comandos de Monorrepo con PNPM
 
 ### Instalar dependencias en todo el monorrepo
 ```bash
@@ -100,7 +144,7 @@ pnpm install
 
 ---
 
-## 4. URLs de Acceso Local
+## 5. URLs de Acceso Local
 
 | Servicio | URL | Descripción |
 |---|---|---|
@@ -111,7 +155,7 @@ pnpm install
 
 ---
 
-## 5. Credenciales de Base de Datos por Defecto
+## 6. Credenciales de Base de Datos por Defecto
 
 - **Host (desde fuera de Docker / DataGrip / DBeaver):** `localhost` o `127.0.0.1`
 - **Host (entre contenedores Docker):** `mysql`
