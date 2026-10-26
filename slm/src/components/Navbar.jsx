@@ -83,59 +83,24 @@ const Navbar = ({ onToggleSidebar, isMini, title = 'Panel de Control' }) => {
           </div>
 
           {dropdownOpen && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 'calc(100% + 10px)',
-                right: 0,
-                backgroundColor: '#ffffff',
-                borderRadius: '12px',
-                boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-                minWidth: '200px',
-                padding: '0.5rem 0',
-                zIndex: 1100,
-                border: '1px solid #edf2f7',
-              }}
-            >
-              <div
-                style={{
-                  padding: '0.65rem 1rem',
-                  borderBottom: '1px solid #edf2f7',
-                }}
-              >
-                <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#2b3674' }}>
-                  {displayName}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: '#707eae' }}>
+            <div className="slm-navbar-dropdown">
+              <div className="slm-navbar-dropdown-header">
+                <div className="slm-navbar-dropdown-name">{displayName}</div>
+                <div className="slm-navbar-dropdown-email">
                   {user?.email || 'admin@sobrelamesa.com'}
                 </div>
               </div>
 
               <button
                 type="button"
+                className="slm-navbar-dropdown-logout"
                 onClick={() => {
                   setDropdownOpen(false);
                   logout();
                 }}
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.65rem 1rem',
-                  border: 'none',
-                  backgroundColor: 'transparent',
-                  color: '#dc3545',
-                  fontSize: '0.85rem',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fff5f5')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
               >
                 <i className="bi bi-box-arrow-right"></i>
-                Cerrar Sesión
+                <span>Cerrar Sesión</span>
               </button>
             </div>
           )}

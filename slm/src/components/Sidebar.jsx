@@ -28,7 +28,7 @@ const MENU_SECTIONS = [
 ];
 
 const Sidebar = ({ isMini, onToggleMini, onCloseMobile }) => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   const handleLinkClick = () => {
     // Si la pantalla es móvil, cerrar el drawer al navegar
@@ -82,25 +82,15 @@ const Sidebar = ({ isMini, onToggleMini, onCloseMobile }) => {
 
       {/* FOOTER */}
       <div className="slm-sidebar-footer">
-        <button
-          type="button"
-          className="slm-sidebar-logout-btn"
-          onClick={logout}
-          title={isMini ? 'Cerrar Sesión' : undefined}
-        >
-          <i className="bi bi-box-arrow-right"></i>
-          {!isMini && <span>Cerrar Sesión</span>}
-        </button>
-
         {/* Toggle mini button visible only when not mobile */}
         <button
           type="button"
           onClick={onToggleMini}
-          className="btn-rounded p-1 text-secondary bg-transparent border-0 d-none d-xl-flex align-items-center justify-content-center"
+          className="slm-sidebar-toggle-mini-btn d-none d-xl-flex"
           title={isMini ? 'Expandir barra lateral' : 'Contraer barra lateral'}
-          style={{ cursor: 'pointer', minWidth: '32px' }}
         >
-          <i className={`bi ${isMini ? 'bi-chevron-double-right' : 'bi-chevron-double-left'} fs-6`}></i>
+          <i className={`bi ${isMini ? 'bi-chevron-double-right' : 'bi-chevron-double-left'}`}></i>
+          {!isMini && <span>Contraer barra</span>}
         </button>
       </div>
     </aside>
