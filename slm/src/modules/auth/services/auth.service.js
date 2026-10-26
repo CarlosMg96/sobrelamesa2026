@@ -2,14 +2,15 @@ import axios from 'axios'
 import axiosClientApi from '../../../app/api/httpClient'
 import { getRefreshToken, setAccessToken, setRefreshToken, clearAuthData } from '../../../shared/utils/auth'
 
-const SERVER_URL = process.env.REACT_APP_SERVER_URL || 'http://localhost:3000'
+const rawUrl = process.env.REACT_APP_SERVER_URL || 'http://localhost:3000/api'
+const API_URL = rawUrl.endsWith('/api') ? rawUrl : `${rawUrl.replace(/\/+$/, '')}/api`
 
 export const refreshTokenService = async () => {
     const refreshToken = getRefreshToken()
     if (!refreshToken) return null
     try {
         // Petición directa a axios sin pasar por los interceptores para evitar bucles
-        const response = await axios.post(`${SERVER_URL}/auth/refresh`, { refreshToken })
+        const response = await axios.post(`${API_URL}/auth/refresh`, { refreshToken })
         const resData = response.data
         const payload = resData?.data || resData
 
@@ -29,7 +30,7 @@ export const refreshTokenService = async () => {
 
 export const loginService = async (credentials) => {
     try {
-        const response = await axios.post(`${SERVER_URL}/auth/login`, credentials)
+        const response = await axios.post(`${API_URL}/auth/login`, credentials)
         return response.data
     } catch (error) {
         if (error.response?.data) {
