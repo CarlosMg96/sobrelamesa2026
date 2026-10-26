@@ -7,14 +7,43 @@ export class EventController {
     constructor(private readonly service: EventService) { }
 
     async getListEvents(req: Request, res: Response) {
-        let { pageNumber, pageLength } = req.query;
-        console.log("query", req.query);
-        if (!pageNumber || !pageLength) {
-            pageNumber = "1";
-            pageLength = "100";
-        }
-        const result = await this.service.getListEvents(Number(pageNumber), Number(pageLength));
+        const {
+            pageNumber,
+            pageLength,
+            search,
+            filterSolver,
+            filterStatus,
+            filterInventory,
+            filterDate,
+            filterPayment,
+            filterPaymentType,
+            logisticsStatus,
+            orderBy,
+            byAuthorizing
+        } = req.query;
+
+        const params = {
+            pageNumber: Number(pageNumber) || 1,
+            pageLength: Number(pageLength) || 10,
+            search: typeof search === 'string' ? search : undefined,
+            filterSolver: filterSolver ? String(filterSolver) : undefined,
+            filterStatus: filterStatus !== undefined ? String(filterStatus) : undefined,
+            filterInventory: typeof filterInventory === 'string' ? filterInventory : undefined,
+            filterDate: typeof filterDate === 'string' ? filterDate : undefined,
+            filterPayment: typeof filterPayment === 'string' ? filterPayment : undefined,
+            filterPaymentType: typeof filterPaymentType === 'string' ? filterPaymentType : undefined,
+            logisticsStatus: logisticsStatus ? String(logisticsStatus) : undefined,
+            orderBy: orderBy !== undefined ? String(orderBy) : undefined,
+            byAuthorizing: byAuthorizing === 'true' || byAuthorizing === '1'
+        };
+
+        const result = await this.service.getListEvents(params);
         return sendResponse(res, 200, "Events list", result);
+    }
+
+    async getSolvers(req: Request, res: Response) {
+        const solvers = await this.service.getSolvers();
+        return sendResponse(res, 200, "Solvers list", solvers);
     }
 
     async getEventById(req: Request, res: Response) {

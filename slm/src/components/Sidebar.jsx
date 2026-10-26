@@ -12,17 +12,19 @@ const MENU_SECTIONS = [
       { to: '/events', icon: 'bi-receipt', label: 'Cotizaciones' },
       { to: '/products', icon: 'bi-box-seam', label: 'Inventario' },
       { to: '/inventory-daily', icon: 'bi-calendar3-week', label: 'Inventario por día' },
+      { to: '/products/new', icon: 'bi-box', label: 'Inventario (Nuevo)' },
       { to: '/events/warehouse', icon: 'bi-truck', label: 'Eventos en curso' },
       { to: '/users', icon: 'bi-people', label: 'Usuarios' },
     ],
   },
   {
-    title: 'Otros',
+    title: 'OTROS',
     items: [
       { to: '/income', icon: 'bi-cash-coin', label: 'Ingresos' },
       { to: '/events/clients', icon: 'bi-person-lines-fill', label: 'Eventos por cliente' },
       { to: '/reports', icon: 'bi-bar-chart', label: 'Reportes' },
       { to: '/settings', icon: 'bi-gear', label: 'Config. General' },
+      { to: '/dashboard-legacy', icon: 'bi-arrow-left-circle', label: 'Dashboard Antiguo' },
     ],
   },
 ];

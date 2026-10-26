@@ -20,12 +20,6 @@ const Navbar = ({ onToggleSidebar, isMini, title = 'Panel de Control' }) => {
   }, []);
 
   const displayName = user?.name || user?.email?.split('@')[0] || 'Administrador';
-  const initials = displayName
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .substring(0, 2)
-    .toUpperCase();
 
   return (
     <header className="slm-navbar">
@@ -40,10 +34,7 @@ const Navbar = ({ onToggleSidebar, isMini, title = 'Panel de Control' }) => {
           <i className="bi bi-list fs-4"></i>
         </button>
 
-        <div>
-          <h1 className="slm-navbar-title">{title}</h1>
-          <p className="slm-navbar-subtitle">Sobre La Mesa | Sistema de Gestión</p>
-        </div>
+        <h1 className="slm-navbar-title fs-5 mb-0" style={{ fontWeight: 600 }}>Panel de Control</h1>
       </div>
 
       {/* RIGHT: Notifications & User Avatar */}
@@ -51,7 +42,7 @@ const Navbar = ({ onToggleSidebar, isMini, title = 'Panel de Control' }) => {
         {/* Theme Switch Claro / Oscuro */}
         <ThemeToggle />
 
-        {/* Notificaciones */}
+        {/* Notificaciones con badge '0' */}
         <button
           type="button"
           className="slm-navbar-toggle-btn position-relative"
@@ -62,24 +53,44 @@ const Navbar = ({ onToggleSidebar, isMini, title = 'Panel de Control' }) => {
           <span
             style={{
               position: 'absolute',
-              top: 6,
-              right: 6,
-              width: 8,
-              height: 8,
-              backgroundColor: '#0d6efd',
-              borderRadius: '50%',
+              top: 2,
+              right: 2,
+              minWidth: 16,
+              height: 16,
+              padding: '0 4px',
+              backgroundColor: '#dc3545',
+              color: '#fff',
+              fontSize: '0.65rem',
+              fontWeight: 700,
+              borderRadius: '9999px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
-          />
+          >
+            0
+          </span>
         </button>
 
         {/* User Dropdown */}
         <div className="position-relative" ref={dropdownRef}>
           <div
-            className="slm-navbar-avatar"
+            className="d-flex align-items-center gap-2"
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            title={displayName}
+            style={{
+              padding: '4px 8px',
+              borderRadius: '20px',
+              cursor: 'pointer',
+              userSelect: 'none'
+            }}
           >
-            {initials}
+            <div className="slm-navbar-avatar" style={{ width: 32, height: 32, fontSize: '0.8rem' }}>
+              <i className="bi bi-person-fill"></i>
+            </div>
+            <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--slm-text-title)' }}>
+              {displayName}
+            </span>
+            <i className="bi bi-chevron-down text-muted" style={{ fontSize: '0.75rem' }}></i>
           </div>
 
           {dropdownOpen && (
