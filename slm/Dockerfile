@@ -1,5 +1,5 @@
 # Base stage para frontend con pnpm
-FROM node:22-alpine AS base
+FROM node:24-alpine AS base
 RUN npm install -g pnpm@10
 
 WORKDIR /app
