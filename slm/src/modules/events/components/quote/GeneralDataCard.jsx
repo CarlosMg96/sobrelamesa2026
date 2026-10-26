@@ -1,5 +1,6 @@
 import React from 'react';
 import SearchableSelect from './SearchableSelect';
+import { showAlert, showToast } from '../../../../shared/utils/alerts';
 
 export default function GeneralDataCard({
     formState,
@@ -93,7 +94,11 @@ export default function GeneralDataCard({
                             value={formState.cliente_id}
                             onChange={handleClientChange}
                             placeholder="Buscar y seleccionar cliente..."
-                            onAddClick={() => alert('Próximamente: modal de creación rápida de cliente')}
+                            onAddClick={() => showAlert({
+                                title: 'Nuevo Cliente',
+                                text: 'El formulario de alta rápida de clientes se abrirá aquí.',
+                                icon: 'info'
+                            })}
                         />
                     </div>
 
@@ -155,7 +160,11 @@ export default function GeneralDataCard({
                             value={formState.domicilio_entrega}
                             onChange={(val) => handleInputChange('domicilio_entrega', val)}
                             placeholder="Bodega de Sobre La Mesa o buscar lugar..."
-                            onAddClick={() => alert('Agregar nuevo domicilio/lugar')}
+                            onAddClick={() => showAlert({
+                                title: 'Nuevo Domicilio',
+                                text: 'El formulario para registrar un nuevo lugar frecuente se abrirá aquí.',
+                                icon: 'info'
+                            })}
                         />
                     </div>
 
@@ -167,8 +176,10 @@ export default function GeneralDataCard({
                             options={placeOptions}
                             value={formState.domicilio_recoleccion}
                             onChange={(val) => handleInputChange('domicilio_recoleccion', val)}
-                            placeholder="Bodega de Sobre La Mesa o buscar lugar..."
-                            onAddClick={() => handleInputChange('domicilio_recoleccion', formState.domicilio_entrega)}
+                            onAddClick={() => {
+                                handleInputChange('domicilio_recoleccion', formState.domicilio_entrega);
+                                showToast('Domicilio copiado a recolección', 'info');
+                            }}
                         />
                     </div>
                 </div>

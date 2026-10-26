@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { showToast, showConfirm } from '../../../../shared/utils/alerts';
 
 export default function ProductsTableCard({
     items,
@@ -25,6 +26,7 @@ export default function ProductsTableCard({
                 row_status: 'new'
             }
         ]);
+        showToast('Sección agregada', 'info');
     };
 
     // Agregar Nota intermedia
@@ -39,6 +41,7 @@ export default function ProductsTableCard({
                 row_status: 'new'
             }
         ]);
+        showToast('Nota agregada', 'info');
     };
 
     // Actualizar campo de un producto
@@ -76,18 +79,33 @@ export default function ProductsTableCard({
         });
     };
 
-    // Eliminar partida
-    const handleDeleteItem = (index) => {
+    // Eliminar partida con confirmación SweetAlert2
+    const handleDeleteItem = async (index) => {
+        const target = items[index];
+        const label = target.type === 'section' ? 'la sección' : target.type === 'note' ? 'la nota' : `"${target.producto || 'este producto'}"`;
+
+        const res = await showConfirm({
+            title: '¿Eliminar partida?',
+            text: `¿Deseas remover ${label} de la cotización?`,
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            icon: 'warning'
+        });
+
+        if (!res.isConfirmed) return;
+
         setItems(prev => {
             const copy = [...prev];
-            const target = copy[index];
-            if (target.id) {
-                copy[index] = { ...target, row_status: 'deleted' };
+            const item = copy[index];
+            if (item.id) {
+                copy[index] = { ...item, row_status: 'deleted' };
                 return copy;
             } else {
                 return copy.filter((_, i) => i !== index);
             }
         });
+
+        showToast('Partida eliminada', 'info');
     };
 
     // Ordenar por categoría
@@ -106,6 +124,7 @@ export default function ProductsTableCard({
 
             return [...prods, ...others].map((it, idx) => ({ ...it, row_position: idx }));
         });
+        showToast('Partidas ordenadas por categoría', 'info');
     };
 
     const handleSaveNewComment = () => {

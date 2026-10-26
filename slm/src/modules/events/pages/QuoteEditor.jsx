@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { getCatalogsService, getEventDetailService, saveQuoteService, addCommentService } from '../services/events.service';
 import { checkStockAvailabilityService } from '../../products/services/products.service';
+import { showToast, showAlert, showConfirm } from '../../../shared/utils/alerts';
 import GeneralDataCard from '../components/quote/GeneralDataCard';
 import ProductsTableCard from '../components/quote/ProductsTableCard';
 import FinancialSummaryCard from '../components/quote/FinancialSummaryCard';
@@ -16,7 +17,6 @@ export default function QuoteEditor() {
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [alertMessage, setAlertMessage] = useState(null); // { type: 'success' | 'danger', text: string }
 
     const [catalogs, setCatalogs] = useState({
         clients: [],
@@ -141,7 +141,7 @@ export default function QuoteEditor() {
                 }
             } catch (err) {
                 console.error('Error cargando cotización:', err);
-                setAlertMessage({ type: 'danger', text: 'Error cargando datos de la cotización' });
+                showToast('Error cargando datos de la cotización', 'error');
             } finally {
                 setLoading(false);
             }
@@ -208,52 +208,62 @@ export default function QuoteEditor() {
         };
 
         setItems(prev => [...prev, newItem]);
+        showToast(`Agregado: ${productToAdd.producto}`, 'success');
     };
 
     // Agregar comentario interno
-    const handleAddComment = async () => {
-        if (!newComment.trim()) return;
+    const handleAddComment = async (commentToAdd) => {
+        const text = (commentToAdd || newComment || '').trim();
+        if (!text) return;
 
         if (isEdit && id) {
             try {
                 await addCommentService({
                     eventoId: Number(id),
-                    comment: newComment.trim()
+                    comment: text
                 });
                 setComments(prev => [
-                    { id: Date.now(), comentario: newComment.trim(), user_name: 'Yo', created_at: new Date() },
+                    { id: Date.now(), comentario: text, user_name: user?.name || 'Yo', created_at: new Date() },
                     ...prev
                 ]);
                 setNewComment('');
+                showToast('Comentario guardado', 'success');
             } catch (err) {
                 console.error('Error guardando comentario:', err);
+                showToast('Error al guardar comentario', 'error');
             }
         } else {
             // En creación se enviará junto al save
             setComments(prev => [
-                { id: Date.now(), comentario: newComment.trim(), user_name: 'Yo', created_at: new Date() },
+                { id: Date.now(), comentario: text, user_name: user?.name || 'Yo', created_at: new Date() },
                 ...prev
             ]);
             setNewComment('');
+            showToast('Comentario registrado localmente', 'info');
         }
     };
 
     // Guardar Cotización (Crear o Actualizar)
-    const handleSaveQuote = async () => {
+    const handleSaveQuote = async (customStatus) => {
         if (!formState.cliente_id) {
-            setAlertMessage({ type: 'danger', text: 'Por favor selecciona un Cliente.' });
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            showAlert({
+                title: 'Cliente requerido',
+                text: 'Por favor selecciona un Cliente para la cotización.',
+                icon: 'warning'
+            });
             return;
         }
 
         if (!formState.fecha_evento) {
-            setAlertMessage({ type: 'danger', text: 'Por favor ingresa la Fecha del Evento.' });
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            showAlert({
+                title: 'Fecha requerida',
+                text: 'Por favor ingresa la Fecha del Evento.',
+                icon: 'warning'
+            });
             return;
         }
 
         setSaving(true);
-        setAlertMessage(null);
 
         try {
             // Separar productos y contents con su posición asignada
@@ -293,6 +303,8 @@ export default function QuoteEditor() {
                 }
             });
 
+            const statusToSave = customStatus !== undefined ? customStatus : (Number(formState.estatus) || 1);
+
             const payload = {
                 id: Number(formState.id) || 0,
                 fecha_cotizacion: formState.fecha_cotizacion,
@@ -319,7 +331,7 @@ export default function QuoteEditor() {
                 lavado_desinfeccion: formState.lavado_desinfeccion || 0,
                 descuento_lavado: Number(formState.descuento_lavado) || 0,
                 tipo_venta: Number(formState.tipo_venta) || 1,
-                estatus: Number(formState.estatus) || 1,
+                estatus: statusToSave,
                 products: productsPayload,
                 contents: contentsPayload,
                 internal_comment: newComment.trim() || undefined
@@ -331,14 +343,12 @@ export default function QuoteEditor() {
                 const savedId = result.data.id;
                 const trackingUrl = result.data.url_seguimiento;
 
-                setAlertMessage({
-                    type: 'success',
-                    text: result.message || 'Cotización guardada exitosamente.'
-                });
+                showToast(result.message || (isEdit ? 'Cotización actualizada con éxito' : 'Cotización creada con éxito'), 'success');
 
                 setFormState(prev => ({
                     ...prev,
                     id: savedId,
+                    estatus: statusToSave,
                     url_seguimiento: trackingUrl || prev.url_seguimiento
                 }));
 
@@ -351,13 +361,21 @@ export default function QuoteEditor() {
             }
         } catch (err) {
             console.error('Error guardando cotización:', err);
-            setAlertMessage({
-                type: 'danger',
-                text: 'Ocurrió un error al guardar la cotización. Por favor verifica los datos.'
-            });
+            showToast('Ocurrió un error al guardar la cotización. Por favor verifica los datos.', 'error');
         } finally {
             setSaving(false);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
+
+    const handleConfirmQuote = async () => {
+        const res = await showConfirm({
+            title: '¿Confirmar cotización?',
+            text: `¿Deseas cambiar el estatus de la cotización #${formState.id || 'Nueva'} a Confirmado?`,
+            confirmButtonText: 'Sí, confirmar',
+            icon: 'question'
+        });
+        if (res.isConfirmed) {
+            handleSaveQuote(3);
         }
     };
 
@@ -405,15 +423,6 @@ export default function QuoteEditor() {
                     Folio: #{isEdit ? String(formState.id).padStart(7, '0') : 'Nueva'}
                 </div>
             </div>
-
-            {/* Alerta de feedback */}
-            {alertMessage && (
-                <div className={`alert alert-${alertMessage.type} alert-dismissible fade show rounded-3 shadow-sm`} role="alert">
-                    <i className={`bi ${alertMessage.type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'} me-2`}></i>
-                    {alertMessage.text}
-                    <button type="button" className="btn-close" onClick={() => setAlertMessage(null)}></button>
-                </div>
-            )}
 
             {/* Panel 1: Datos Generales y Logística */}
             <GeneralDataCard
@@ -480,10 +489,8 @@ export default function QuoteEditor() {
                         type="button"
                         className="btn btn-outline-dark rounded-pill px-4 fw-semibold d-flex align-items-center gap-1 bg-white"
                         style={{ borderColor: '#cbd5e1' }}
-                        onClick={() => {
-                            setFormState(prev => ({ ...prev, estatus: 3 }));
-                            handleSaveQuote();
-                        }}
+                        onClick={handleConfirmQuote}
+                        disabled={saving}
                     >
                         <i className="bi bi-check-lg"></i> Confirmar
                     </button>

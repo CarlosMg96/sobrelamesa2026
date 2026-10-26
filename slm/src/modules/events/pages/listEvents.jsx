@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { getEventsListService, getSolversService } from '../services/events.service';
+import { showToast, showConfirm } from '../../../shared/utils/alerts';
 
 // Formato de fecha en español idéntico al legacy: "domingo, 25 de octubre de 2026"
 const formatDateES = (dateStr) => {
@@ -790,7 +791,7 @@ export default function ListEvents() {
                                   className="slm-table-dropdown-item"
                                   onClick={() => {
                                     setOpenDropdownId(null);
-                                    alert(`Evento #${evt.id} autorizado exitosamente`);
+                                    showToast(`Evento #${evt.id} autorizado exitosamente`, 'success');
                                   }}
                                 >
                                   <i className="bi bi-check-circle text-muted"></i> Autorizar
@@ -812,9 +813,16 @@ export default function ListEvents() {
                                 <button
                                   type="button"
                                   className="slm-table-dropdown-item"
-                                  onClick={() => {
+                                  onClick={async () => {
                                     setOpenDropdownId(null);
-                                    alert(`Cotización #${evt.id} confirmada`);
+                                    const res = await showConfirm({
+                                      title: '¿Confirmar cotización?',
+                                      text: `¿Deseas confirmar la cotización #${evt.id}?`,
+                                      confirmButtonText: 'Sí, confirmar'
+                                    });
+                                    if (res.isConfirmed) {
+                                      showToast(`Cotización #${evt.id} confirmada`, 'success');
+                                    }
                                   }}
                                 >
                                   <i className="bi bi-check-circle text-muted"></i> Confirmar Cotización
@@ -826,7 +834,7 @@ export default function ListEvents() {
                                   className="slm-table-dropdown-item"
                                   onClick={() => {
                                     setOpenDropdownId(null);
-                                    alert(`Generando nota de pérdida para evento #${evt.id}`);
+                                    showToast(`Generando nota de pérdida para evento #${evt.id}`, 'info');
                                   }}
                                 >
                                   <i className="bi bi-file-earmark-text text-muted"></i> Nota de Pérdida
@@ -839,7 +847,7 @@ export default function ListEvents() {
                                   className="slm-table-dropdown-item text-primary"
                                   onClick={() => {
                                     setOpenDropdownId(null);
-                                    alert(`Des-cancelando evento #${evt.id}`);
+                                    showToast(`Des-cancelando evento #${evt.id}`, 'info');
                                   }}
                                 >
                                   <i className="bi bi-arrow-counterclockwise text-primary"></i> Des-cancelar
@@ -851,7 +859,7 @@ export default function ListEvents() {
                                   className="slm-table-dropdown-item text-primary"
                                   onClick={() => {
                                     setOpenDropdownId(null);
-                                    alert(`Duplicando evento #${evt.id}`);
+                                    showToast(`Duplicando evento #${evt.id}`, 'info');
                                   }}
                                 >
                                   <i className="bi bi-copy text-primary"></i> Duplicar
@@ -861,9 +869,17 @@ export default function ListEvents() {
                                 <button
                                   type="button"
                                   className="slm-table-dropdown-item text-danger"
-                                  onClick={() => {
+                                  onClick={async () => {
                                     setOpenDropdownId(null);
-                                    alert(`Cancelando evento #${evt.id}`);
+                                    const res = await showConfirm({
+                                      title: '¿Cancelar evento?',
+                                      text: `¿Estás seguro de cancelar el evento #${evt.id}?`,
+                                      confirmButtonText: 'Sí, cancelar evento',
+                                      icon: 'warning'
+                                    });
+                                    if (res.isConfirmed) {
+                                      showToast(`Evento #${evt.id} cancelado`, 'info');
+                                    }
                                   }}
                                 >
                                   <i className="bi bi-x-circle text-danger"></i> Cancelar

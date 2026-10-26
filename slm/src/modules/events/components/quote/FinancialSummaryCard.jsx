@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { showToast } from '../../../../shared/utils/alerts';
 
 export default function FinancialSummaryCard({
     formState,
@@ -44,12 +45,15 @@ export default function FinancialSummaryCard({
         navigator.clipboard.writeText(text);
         if (type === 'quote') {
             setCopiedQuoteLink(true);
+            showToast('Enlace de cotización copiado', 'success');
             setTimeout(() => setCopiedQuoteLink(false), 2000);
         } else if (type === 'logistics') {
             setCopiedLogisticsLink(true);
+            showToast('Enlace de orden logística copiado', 'success');
             setTimeout(() => setCopiedLogisticsLink(false), 2000);
         } else if (type === 'message') {
             setCopiedMessage(true);
+            showToast('Mensaje de WhatsApp copiado', 'success');
             setTimeout(() => setCopiedMessage(false), 2000);
         }
     };
