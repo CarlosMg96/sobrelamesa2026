@@ -1,24 +1,38 @@
-import { createContext, useContext, useState, useEffect } from 'react'
-import { loginService, meService } from '../services/auth.service'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { loginService, logoutService, meService } from '../services/auth.service'
 import { emit, AppEvents } from '../../../app/events/appEvents'
-import { useNavigate } from 'react-router-dom';
-import { setAccessToken, setRefreshToken, setUser, getAccessToken } from '../../../shared/utils/auth'
+import { useNavigate } from 'react-router-dom'
+import {
+    setAccessToken,
+    setRefreshToken,
+    setUser,
+    getUser,
+    getAccessToken,
+    clearAuthData
+} from '../../../shared/utils/auth'
+
 const AuthContext = createContext(null)
 
-
 export function AuthProvider({ children }) {
-    const [user, setUserState] = useState(() => getAccessToken() ? {} : null);
-    const [loading, setLoading] = useState(true);
-    const navigate = useNavigate();
+    const [user, setUserState] = useState(() => {
+        const token = getAccessToken()
+        if (!token) return null
+        return getUser() || {}
+    })
+    const [loading, setLoading] = useState(true)
+    const navigate = useNavigate()
 
     useEffect(() => {
-        // Si hay usuario en localStorage, lo carga al estado
-        const storedUser = getAccessToken() ? {} : null;
-        if (storedUser) {
-            setUserState(storedUser);
+        const token = getAccessToken()
+        if (token) {
+            const storedUser = getUser()
+            setUserState(storedUser || {})
+        } else {
+            clearAuthData()
+            setUserState(null)
         }
-        setLoading(false);
-    }, []);
+        setLoading(false)
+    }, [])
 
     const login = async (credentials) => {
         const data = await loginService(credentials)
@@ -36,14 +50,18 @@ export function AuthProvider({ children }) {
         }
     }
 
-    const logout = () => {
-        setAccessToken(null)
-        setRefreshToken(null)
-        setUserState(null)
-        setUser(null)
-        emit(AppEvents.LOGOUT)
-        navigate('/login')
-    }
+    const logout = useCallback(async () => {
+        try {
+            await logoutService()
+        } catch (e) {
+            console.warn('Error during logout:', e)
+        } finally {
+            clearAuthData()
+            setUserState(null)
+            emit(AppEvents.LOGOUT)
+            navigate('/login', { replace: true })
+        }
+    }, [navigate])
 
     return (
         <AuthContext.Provider value={{ user, login, loading, logout }}>
