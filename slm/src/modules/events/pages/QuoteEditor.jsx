@@ -93,25 +93,28 @@ export default function QuoteEditor() {
                     if (detailRes?.data) {
                         const { event, products = [], contents = [], comments = [] } = detailRes.data;
 
+                        const cleanDate = (d) => d ? String(d).split('T')[0].split(' ')[0] : '';
+                        const cleanTime = (t, def = '12:00') => t ? String(t).substring(0, 5) : def;
+
                         setFormState({
                             id: event.id,
-                            fecha_cotizacion: event.fecha_cotizacion || '',
+                            fecha_cotizacion: cleanDate(event.fecha_cotizacion) || new Date().toISOString().split('T')[0],
                             cliente_id: event.cliente_id || '',
                             cliente_nombre: event.cliente || '',
                             agente_id: event.agente_id || '',
                             tipo_evento: event.tipo_evento || '',
                             no_personas: event.no_personas || '',
-                            fecha_evento: event.fecha_evento || '',
-                            hora_evento: event.hora_evento || '14:00',
-                            fecha_entrega: event.fecha_entrega || '',
-                            hora_entrega: event.hora_entrega || '12:00',
+                            fecha_evento: cleanDate(event.fecha_evento),
+                            hora_evento: cleanTime(event.hora_evento, '14:00'),
+                            fecha_entrega: cleanDate(event.fecha_entrega),
+                            hora_entrega: cleanTime(event.hora_entrega, '12:00'),
                             tipo_horario_entrega: event.tipo_horario_entrega || 'ESPECIFICO',
-                            hora_entrega_fin: event.hora_entrega_fin || '',
+                            hora_entrega_fin: cleanTime(event.hora_entrega_fin, ''),
                             domicilio_entrega: event.domicilio_entrega || '',
-                            fecha_recoleccion: event.fecha_recoleccion || '',
-                            hora_recoleccion: event.hora_recoleccion || '12:00',
+                            fecha_recoleccion: cleanDate(event.fecha_recoleccion),
+                            hora_recoleccion: cleanTime(event.hora_recoleccion, '12:00'),
                             tipo_horario_recoleccion: event.tipo_horario_recoleccion || 'ESPECIFICO',
-                            hora_recoleccion_fin: event.hora_recoleccion_fin || '',
+                            hora_recoleccion_fin: cleanTime(event.hora_recoleccion_fin, ''),
                             domicilio_recoleccion: event.domicilio_recoleccion || '',
                             tipo_pago: event.tipo_pago || 3,
                             descuento: event.descuento || 0,
@@ -120,7 +123,7 @@ export default function QuoteEditor() {
                             lavado_desinfeccion: event.lavado_desinfeccion || 0,
                             descuento_lavado: event.descuento_lavado || 0,
                             tipo_venta: event.tipo_venta || 1,
-                            estatus: event.estatus || 1,
+                            estatus: Number(event.estatus) || 1,
                             url_seguimiento: event.url_seguimiento || ''
                         });
 
@@ -303,7 +306,7 @@ export default function QuoteEditor() {
                 }
             });
 
-            const statusToSave = customStatus !== undefined ? customStatus : (Number(formState.estatus) || 1);
+            const statusToSave = typeof customStatus === 'number' ? customStatus : (Number(formState.estatus) || 1);
 
             const payload = {
                 id: Number(formState.id) || 0,
@@ -498,7 +501,7 @@ export default function QuoteEditor() {
                     <button
                         type="button"
                         className="btn btn-primary rounded-pill px-4 shadow fw-semibold d-flex align-items-center gap-2"
-                        onClick={handleSaveQuote}
+                        onClick={() => handleSaveQuote()}
                         disabled={saving}
                     >
                         {saving ? (

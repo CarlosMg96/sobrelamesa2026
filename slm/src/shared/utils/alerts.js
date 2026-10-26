@@ -1,4 +1,5 @@
 import Swal from 'sweetalert2';
+import 'sweetalert2/dist/sweetalert2.min.css';
 
 // Toast flotante no invasivo (arriba a la derecha)
 export const Toast = Swal.mixin({
