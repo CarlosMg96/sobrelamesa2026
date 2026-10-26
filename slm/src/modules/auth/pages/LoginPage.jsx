@@ -12,9 +12,6 @@ export default function LoginPage() {
             alt="Sobre La Mesa"
             className="slm-login-hero-logo"
           />
-          <span className="slm-login-hero-tagline">
-            Gestión de Eventos & Inventario
-          </span>
         </div>
 
         {/* PANEL DERECHO: Formulario Limpio */}

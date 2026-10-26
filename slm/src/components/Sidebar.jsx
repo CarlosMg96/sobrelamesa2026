@@ -84,13 +84,12 @@ const Sidebar = ({ isMini, onToggleMini, onCloseMobile }) => {
       <div className="slm-sidebar-footer">
         <button
           type="button"
-          className="nav-link-custom border-0 bg-transparent w-100 text-danger"
+          className="slm-sidebar-logout-btn"
           onClick={logout}
           title={isMini ? 'Cerrar Sesión' : undefined}
-          style={{ cursor: 'pointer', padding: '0.65rem 0.85rem' }}
         >
-          <i className="bi bi-box-arrow-right text-danger"></i>
-          <span className="nav-text text-danger">Cerrar Sesión</span>
+          <i className="bi bi-box-arrow-right"></i>
+          {!isMini && <span>Cerrar Sesión</span>}
         </button>
 
         {/* Toggle mini button visible only when not mobile */}

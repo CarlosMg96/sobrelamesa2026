@@ -173,7 +173,6 @@ export function LoginForm() {
           color: '#94a3b8',
         }}
       >
-        <span>🔒 Acceso seguro para personal autorizado · v2026.1</span>
       </div>
     </form>
   );
