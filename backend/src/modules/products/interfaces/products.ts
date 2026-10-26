@@ -15,6 +15,8 @@ export interface Product {
     deposito_garantia: number;
     costo_sin_iva: number;
     status?: number;
+    categoria?: string;
     created_at: string;
     updated_at: string;
 }
+

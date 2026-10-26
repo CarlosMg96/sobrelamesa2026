@@ -1,5 +1,5 @@
 import { EventRepository, EventQueryParams } from "../respository/event.repository";
-import { Event } from "../interfaces/event";
+import { Event, EventDetailResponse, CatalogsResponse, SaveQuoteDTO } from "../interfaces/event";
 
 export class EventService {
     constructor(private readonly repo: EventRepository) { }
@@ -48,6 +48,18 @@ export class EventService {
             return null;
         }
         return result;
+    }
+
+    async getEventDetail(id: number): Promise<EventDetailResponse | null> {
+        return await this.repo.getEventDetail(id);
+    }
+
+    async getCatalogs(): Promise<CatalogsResponse> {
+        return await this.repo.getCatalogs();
+    }
+
+    async saveOrUpdateQuote(dto: SaveQuoteDTO, userId?: number, userName?: string): Promise<{ id: number; message: string; url_seguimiento?: string }> {
+        return await this.repo.saveOrUpdateQuote(dto, userId, userName);
     }
 
     async getCalendarEvents(startDate: string, endDate: string, filterByDate?: string): Promise<Event[]> {

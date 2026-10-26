@@ -14,6 +14,8 @@ const productService = new ProductService(productsRepository);  // Instancia del
 const productController = new ProductController(productService);  // Instancia del controlador
 
 // Rutas del controlador de productos
+router.get("/categories", authMiddleware, authorize([Role.MASTER, Role.ADMIN, Role.SALES, Role.WAREHOUSE, Role.STAFF]), (req, res) => productController.getCategories(req, res));
+router.post("/check-availability", authMiddleware, authorize([Role.MASTER, Role.ADMIN, Role.SALES, Role.WAREHOUSE, Role.STAFF]), (req, res) => productController.checkAvailability(req, res));
 router.get("/list", authMiddleware, authorize([Role.MASTER, Role.ADMIN, Role.SALES, Role.WAREHOUSE, Role.STAFF]), (req, res) => productController.getListProducts(req, res));
 router.get("/product/:id", authMiddleware, authorize([Role.MASTER, Role.ADMIN, Role.SALES, Role.WAREHOUSE, Role.STAFF]), (req, res) => productController.getProductById(req, res));
 router.post("/product", authMiddleware, authorize([Role.MASTER, Role.ADMIN, Role.SALES, Role.WAREHOUSE, Role.STAFF]), (req, res) => productController.createProduct(req, res));

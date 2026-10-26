@@ -4,19 +4,35 @@ import { db } from "../../../config/database";
 import { RowDataPacket } from "mysql2";
 
 export class ProductRepositoryMySQL implements ProductRepository {
-    async getListProducts(pageNumber: number, pageLength: number): Promise<{ data: Product[], pagination: any } | null> {
+    async getListProducts(pageNumber: number, pageLength: number, search?: string, categoryId?: number): Promise<{ data: Product[], pagination: any } | null> {
         const offset = (pageNumber - 1) * pageLength;
+        const whereClauses: string[] = ['p.status = 1'];
+        const queryParams: any[] = [];
+
+        if (search && search.trim()) {
+            whereClauses.push('(p.producto LIKE ? OR p.clave LIKE ?)');
+            const s = `%${search.trim()}%`;
+            queryParams.push(s, s);
+        }
+
+        if (categoryId && Number(categoryId) > 0) {
+            whereClauses.push('p.categoria_producto_id = ?');
+            queryParams.push(Number(categoryId));
+        }
+
+        const whereSql = whereClauses.join(' AND ');
+
         const sql = `
-        SELECT * FROM producto
-        LIMIT ? OFFSET ?
-    `;
+            SELECT p.*, cp.categoria
+            FROM producto p
+            LEFT JOIN categoria_producto cp ON cp.id = p.categoria_producto_id
+            WHERE ${whereSql}
+            ORDER BY p.producto ASC
+            LIMIT ? OFFSET ?
+        `;
 
         try {
-            const [rows] = await db.query<RowDataPacket[]>(sql, [pageLength, offset]);
-
-            if (!rows.length) {
-                return null;
-            }
+            const [rows] = await db.query<RowDataPacket[]>(sql, [...queryParams, pageLength, offset]);
 
             const products: Product[] = rows.map(row => ({
                 id: row.id,
@@ -35,13 +51,14 @@ export class ProductRepositoryMySQL implements ProductRepository {
                 deposito_garantia: row.deposito_garantia,
                 costo_sin_iva: row.costo_sin_iva,
                 status: row.status,
+                categoria: row.categoria,
                 created_at: row.created_at,
                 updated_at: row.updated_at
             }));
 
-            const totalSql = `SELECT COUNT(*) AS total FROM producto`;
-            const [totalRows] = await db.query<RowDataPacket[]>(totalSql);
-            const total = totalRows[0].total;
+            const totalSql = `SELECT COUNT(*) AS total FROM producto p WHERE ${whereSql}`;
+            const [totalRows] = await db.query<RowDataPacket[]>(totalSql, queryParams);
+            const total = totalRows[0]?.total || 0;
 
             return {
                 data: products,
@@ -49,7 +66,7 @@ export class ProductRepositoryMySQL implements ProductRepository {
                     total,
                     current_page: pageNumber,
                     per_page: pageLength,
-                    total_pages: Math.ceil(total / pageLength),
+                    total_pages: Math.ceil(total / pageLength) || 1,
                 }
             };
         } catch (error) {
@@ -142,7 +159,12 @@ export class ProductRepositoryMySQL implements ProductRepository {
     }
 
     async getProductById(id: number): Promise<Product | null> {
-        const sql = `SELECT * FROM producto WHERE id = ?`;
+        const sql = `
+            SELECT p.*, cp.categoria
+            FROM producto p
+            LEFT JOIN categoria_producto cp ON cp.id = p.categoria_producto_id
+            WHERE p.id = ?
+        `;
         try {
             const [rows] = await db.query<RowDataPacket[]>(sql, [id]);
             if (!rows.length) return null;
@@ -150,6 +172,77 @@ export class ProductRepositoryMySQL implements ProductRepository {
         } catch (error) {
             console.error('Error en getProductById', error);
             return null;
+        }
+    }
+
+    async getCategories(): Promise<{ id: number; categoria: string }[]> {
+        try {
+            const sql = `
+                SELECT id, categoria 
+                FROM categoria_producto 
+                WHERE status = 1 
+                ORDER BY categoria ASC
+            `;
+            const [rows] = await db.query<RowDataPacket[]>(sql);
+            return rows.map(r => ({ id: Number(r.id), categoria: r.categoria }));
+        } catch (error) {
+            console.error('Error en getCategories:', error);
+            return [];
+        }
+    }
+
+    async checkStockAvailability(productIds: number[], startDate: string, endDate: string, eventId?: number): Promise<Record<number, { stock: number; used: number; available: number }>> {
+        if (!productIds || productIds.length === 0) {
+            return {};
+        }
+
+        try {
+            // 1. Obtener stock base de los productos solicitados
+            const [productRows] = await db.query<RowDataPacket[]>(
+                `SELECT id, stock FROM producto WHERE id IN (?)`,
+                [productIds]
+            );
+
+            const result: Record<number, { stock: number; used: number; available: number }> = {};
+            for (const p of productRows) {
+                const stock = Number(p.stock) || 0;
+                result[p.id] = { stock, used: 0, available: stock };
+            }
+
+            // 2. Calcular cantidad usada en eventos traslapados (estatus 2=Autorizado, 3=Confirmado)
+            let usedSql = `
+                SELECT de.producto_id, SUM(de.cantidad) AS used_quantity
+                FROM detalle_evento de
+                JOIN evento e ON e.id = de.evento_id
+                WHERE de.producto_id IN (?)
+                  AND e.estatus IN (2, 3)
+                  AND e.fecha_entrega <= ?
+                  AND e.fecha_recoleccion >= ?
+            `;
+            const params: any[] = [productIds, endDate, startDate];
+
+            if (eventId && Number(eventId) > 0) {
+                usedSql += ` AND e.id != ?`;
+                params.push(Number(eventId));
+            }
+
+            usedSql += ` GROUP BY de.producto_id`;
+
+            const [usedRows] = await db.query<RowDataPacket[]>(usedSql, params);
+
+            for (const u of usedRows) {
+                const pId = Number(u.producto_id);
+                if (result[pId]) {
+                    const used = Number(u.used_quantity) || 0;
+                    result[pId].used = used;
+                    result[pId].available = result[pId].stock - used;
+                }
+            }
+
+            return result;
+        } catch (error) {
+            console.error('Error en checkStockAvailability:', error);
+            return {};
         }
     }
 }

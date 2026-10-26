@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { getEventsListService, getSolversService } from '../services/events.service';
 
 // Formato de fecha en español idéntico al legacy: "domingo, 25 de octubre de 2026"
@@ -33,6 +34,7 @@ const formatDateES = (dateStr) => {
 };
 
 export default function ListEvents() {
+  const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [solvers, setSolvers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -405,6 +407,15 @@ export default function ListEvents() {
 
           {/* Right Top Actions */}
           <div className="slm-filter-top-actions">
+            {/* Botón Nueva Cotización */}
+            <Link
+              to="/events/new"
+              className="btn btn-primary rounded-pill px-3 shadow-sm d-flex align-items-center gap-1"
+            >
+              <i className="bi bi-plus-lg"></i>
+              <span>Nueva Cotización</span>
+            </Link>
+
             {/* Botón Por Autorizar con Badge */}
             <button
               type="button"
@@ -704,7 +715,7 @@ export default function ListEvents() {
                           type="button"
                           className="action-btn"
                           title="Editar cotización"
-                          onClick={() => alert(`Editar evento #${evt.id}`)}
+                          onClick={() => navigate(`/events/edit/${evt.id}`)}
                         >
                           <i className="bi bi-pencil"></i>
                         </button>
@@ -725,6 +736,18 @@ export default function ListEvents() {
                           {/* Action Dropdown Menu */}
                           {isDropdownOpen && (
                             <ul className="slm-table-dropdown shadow">
+                              <li>
+                                <button
+                                  type="button"
+                                  className="slm-table-dropdown-item"
+                                  onClick={() => {
+                                    setOpenDropdownId(null);
+                                    navigate(`/events/edit/${evt.id}`);
+                                  }}
+                                >
+                                  <i className="bi bi-pencil text-muted"></i> Editar Cotización
+                                </button>
+                              </li>
                               <li>
                                 <button
                                   type="button"

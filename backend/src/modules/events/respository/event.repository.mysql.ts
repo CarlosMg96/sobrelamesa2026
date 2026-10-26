@@ -1,5 +1,5 @@
 import { EventRepository, EventQueryParams } from "./event.repository";
-import { Event } from "../interfaces/event";
+import { Event, EventDetailResponse, CatalogsResponse, SaveQuoteDTO, QuoteProductItem, QuoteContentItem } from "../interfaces/event";
 import { db } from "../../../config/database";
 import { RowDataPacket } from "mysql2";
 import bcrypt from "bcryptjs";
@@ -507,4 +507,432 @@ export class EventsMySQLRepository implements EventRepository {
         }
     }
 
+    async getEventDetail(event_id: number): Promise<EventDetailResponse | null> {
+        try {
+            const eventSql = `
+                SELECT evento.*, 
+                       cliente.full_name AS cliente,
+                       cliente.num_tel,
+                       cliente.email,
+                       cliente.direccion AS cliente_direccion,
+                       empresas.empresa,
+                       empresas.descuento_empresa,
+                       users.name AS agente,
+                       tipo_evento.evento AS tipo_evento_nombre
+                FROM evento
+                LEFT JOIN persona_fisica AS cliente ON cliente.id = evento.cliente_id
+                LEFT JOIN empresas ON empresas.id = cliente.empresa_id
+                LEFT JOIN users ON users.id = evento.agente_id
+                LEFT JOIN tipo_evento ON tipo_evento.id = evento.tipo_evento
+                WHERE evento.id = ?
+            `;
+            const [eventRows] = await db.query<RowDataPacket[]>(eventSql, [event_id]);
+            if (!eventRows.length) return null;
+
+            const event = eventRows[0] as Event;
+
+            const productsSql = `
+                SELECT de.id,
+                       de.producto_id,
+                       de.cantidad,
+                       de.precio_producto,
+                       COALESCE(de.descuento, 0) AS descuento,
+                       COALESCE(de.dias, 1) AS dias,
+                       COALESCE(de.row_position, 0) AS row_position,
+                       p.clave,
+                       p.producto,
+                       p.imagen,
+                       p.stock,
+                       p.precio_renta,
+                       cp.categoria
+                FROM detalle_evento de
+                JOIN producto p ON p.id = de.producto_id
+                LEFT JOIN categoria_producto cp ON cp.id = p.categoria_producto_id
+                WHERE de.evento_id = ?
+                ORDER BY de.row_position ASC, de.id ASC
+            `;
+            const [productRows] = await db.query<RowDataPacket[]>(productsSql, [event_id]);
+            const products: QuoteProductItem[] = productRows.map(r => ({
+                id: Number(r.id),
+                producto_id: Number(r.producto_id),
+                cantidad: Number(r.cantidad),
+                precio_producto: Number(r.precio_producto),
+                descuento: Number(r.descuento) || 0,
+                dias: Number(r.dias) || 1,
+                row_position: Number(r.row_position) || 0,
+                row_status: 'exists',
+                clave: r.clave,
+                producto: r.producto,
+                imagen: r.imagen,
+                categoria: r.categoria,
+                stock: Number(r.stock) || 0,
+                subtotal: (Number(r.cantidad) * Number(r.precio_producto) * (Number(r.dias) || 1)) * (1 - (Number(r.descuento) || 0) / 100)
+            }));
+
+            const contentsSql = `
+                SELECT id, evento_id, content_seccion, type, row_position
+                FROM detalle_evento_content
+                WHERE evento_id = ?
+                ORDER BY row_position ASC, id ASC
+            `;
+            const [contentRows] = await db.query<RowDataPacket[]>(contentsSql, [event_id]);
+            const contents: QuoteContentItem[] = contentRows.map(r => ({
+                id: Number(r.id),
+                evento_id: Number(r.evento_id),
+                content_seccion: r.content_seccion,
+                type: Number(r.type),
+                row_position: Number(r.row_position) || 0,
+                row_status: 'exists'
+            }));
+
+            const commentsSql = `
+                SELECT id, comentario, user_name, created_at
+                FROM comentarios_internos
+                WHERE evento_id = ?
+                ORDER BY created_at DESC
+            `;
+            const [commentRows] = await db.query<RowDataPacket[]>(commentsSql, [event_id]);
+
+            return {
+                event,
+                products,
+                contents,
+                comments: commentRows
+            };
+        } catch (error) {
+            console.error('Error in getEventDetail:', error);
+            return null;
+        }
+    }
+
+    async getCatalogs(): Promise<CatalogsResponse> {
+        try {
+            const clientsSql = `
+                SELECT pf.id, 
+                       pf.full_name, 
+                       pf.email, 
+                       pf.num_tel, 
+                       pf.direccion, 
+                       pf.empresa_id,
+                       e.empresa, 
+                       e.descuento_empresa
+                FROM persona_fisica pf
+                LEFT JOIN empresas e ON e.id = pf.empresa_id
+                WHERE pf.status = 1
+                ORDER BY pf.full_name ASC
+            `;
+            const [clients] = await db.query<RowDataPacket[]>(clientsSql);
+
+            const agentsSql = `
+                SELECT id, name, email 
+                FROM users 
+                WHERE status = 1 
+                ORDER BY name ASC
+            `;
+            const [agents] = await db.query<RowDataPacket[]>(agentsSql);
+
+            const typesSql = `
+                SELECT id, evento 
+                FROM tipo_evento 
+                WHERE status = 1 AND evento IS NOT NULL AND evento != '' 
+                ORDER BY evento ASC
+            `;
+            const [eventTypes] = await db.query<RowDataPacket[]>(typesSql);
+
+            const placesSql = `
+                SELECT id, nombre, direccion 
+                FROM lugar 
+                WHERE status = 1 
+                ORDER BY nombre ASC
+            `;
+            const [places] = await db.query<RowDataPacket[]>(placesSql);
+
+            const paymentTypes = [
+                { id: 1, name: 'Muestra' },
+                { id: 2, name: 'Promoción' },
+                { id: 3, name: 'Transferencia' },
+                { id: 4, name: 'Intercambio' },
+                { id: 5, name: 'Efectivo' },
+                { id: 6, name: 'Con Crédito' },
+                { id: 7, name: 'De Contado' }
+            ];
+
+            return {
+                clients,
+                agents,
+                eventTypes,
+                places,
+                paymentTypes
+            };
+        } catch (error) {
+            console.error('Error in getCatalogs:', error);
+            return {
+                clients: [],
+                agents: [],
+                eventTypes: [],
+                places: [],
+                paymentTypes: []
+            };
+        }
+    }
+
+    async saveOrUpdateQuote(dto: SaveQuoteDTO, userId?: number, userName?: string): Promise<{ id: number; message: string; url_seguimiento?: string }> {
+        const poolConn = await db.getConnection();
+        await poolConn.beginTransaction();
+
+        try {
+            let eventId = Number(dto.id);
+            let action = "Edición";
+
+            if (eventId && eventId > 0) {
+                const updateSql = `
+                    UPDATE evento SET
+                        fecha_cotizacion = ?,
+                        cliente_id = ?,
+                        agente_id = ?,
+                        tipo_evento = ?,
+                        no_personas = ?,
+                        domicilio_entrega = ?,
+                        domicilio_recoleccion = ?,
+                        fecha_evento = ?,
+                        hora_evento = ?,
+                        fecha_entrega = ?,
+                        hora_entrega = ?,
+                        tipo_horario_entrega = ?,
+                        hora_entrega_fin = ?,
+                        fecha_recoleccion = ?,
+                        hora_recoleccion = ?,
+                        tipo_horario_recoleccion = ?,
+                        hora_recoleccion_fin = ?,
+                        tipo_pago = ?,
+                        descuento = ?,
+                        deposito = ?,
+                        status_deposito = ?,
+                        lavado_desinfeccion = ?,
+                        descuento_lavado = ?,
+                        tipo_venta = ?,
+                        estatus = COALESCE(?, estatus),
+                        updated_at = NOW()
+                    WHERE id = ?
+                `;
+                await poolConn.query(updateSql, [
+                    dto.fecha_cotizacion,
+                    dto.cliente_id,
+                    dto.agente_id,
+                    dto.tipo_evento,
+                    dto.no_personas || 0,
+                    dto.domicilio_entrega || '',
+                    dto.domicilio_recoleccion || '',
+                    dto.fecha_evento,
+                    dto.hora_evento || '12:00:00',
+                    dto.fecha_entrega || '0000-00-00',
+                    dto.hora_entrega || '12:00:00',
+                    dto.tipo_horario_entrega || 'ESPECIFICO',
+                    dto.hora_entrega_fin || null,
+                    dto.fecha_recoleccion || '0000-00-00',
+                    dto.hora_recoleccion || '12:00:00',
+                    dto.tipo_horario_recoleccion || 'ESPECIFICO',
+                    dto.hora_recoleccion_fin || null,
+                    dto.tipo_pago || 1,
+                    dto.descuento || 0,
+                    dto.deposito !== undefined ? dto.deposito : 1,
+                    dto.status_deposito !== undefined ? dto.status_deposito : 0,
+                    String(dto.lavado_desinfeccion || '0'),
+                    dto.descuento_lavado || 0,
+                    dto.tipo_venta || 1,
+                    dto.estatus !== undefined ? dto.estatus : null,
+                    eventId
+                ]);
+            } else {
+                action = "Creación";
+                const insertSql = `
+                    INSERT INTO evento (
+                        fecha_cotizacion, cliente_id, agente_id, tipo_evento,
+                        no_personas, domicilio_entrega, domicilio_recoleccion,
+                        fecha_evento, hora_evento, fecha_entrega, hora_entrega,
+                        tipo_horario_entrega, hora_entrega_fin, fecha_recoleccion,
+                        hora_recoleccion, tipo_horario_recoleccion, hora_recoleccion_fin,
+                        tipo_pago, descuento, deposito, status_deposito, lavado_desinfeccion, descuento_lavado,
+                        tipo_venta, estatus, url_seguimiento, status_entrega, status_recibido,
+                        created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', 1, 1, NOW(), NOW())
+                `;
+                const [insertRes]: any = await poolConn.query(insertSql, [
+                    dto.fecha_cotizacion,
+                    dto.cliente_id,
+                    dto.agente_id,
+                    dto.tipo_evento,
+                    dto.no_personas || 0,
+                    dto.domicilio_entrega || '',
+                    dto.domicilio_recoleccion || '',
+                    dto.fecha_evento,
+                    dto.hora_evento || '12:00:00',
+                    dto.fecha_entrega || '0000-00-00',
+                    dto.hora_entrega || '12:00:00',
+                    dto.tipo_horario_entrega || 'ESPECIFICO',
+                    dto.hora_entrega_fin || null,
+                    dto.fecha_recoleccion || '0000-00-00',
+                    dto.hora_recoleccion || '12:00:00',
+                    dto.tipo_horario_recoleccion || 'ESPECIFICO',
+                    dto.hora_recoleccion_fin || null,
+                    dto.tipo_pago || 1,
+                    dto.descuento || 0,
+                    dto.deposito !== undefined ? dto.deposito : 1,
+                    dto.status_deposito !== undefined ? dto.status_deposito : 0,
+                    String(dto.lavado_desinfeccion || '0'),
+                    dto.descuento_lavado || 0,
+                    dto.tipo_venta || 1,
+                    dto.estatus !== undefined ? dto.estatus : 1
+                ]);
+
+                eventId = insertRes.insertId;
+
+                const shortHash = Buffer.from(String(eventId)).toString('base64');
+                const urlSeguimiento = `https://sobre-la-mesa.com/cotizacion/${shortHash}`;
+                await poolConn.query(`UPDATE evento SET url_seguimiento = ? WHERE id = ?`, [urlSeguimiento, eventId]);
+            }
+
+            // Reconciliación de Detalle de Productos (detalle_evento)
+            if (dto.products) {
+                const activeProductDetailIds = dto.products
+                    .filter(p => p.row_status !== 'deleted' && p.row_status !== 'cancelled' && p.id && Number(p.id) > 0)
+                    .map(p => Number(p.id));
+
+                if (activeProductDetailIds.length > 0) {
+                    await poolConn.query(
+                        `DELETE FROM detalle_evento WHERE evento_id = ? AND id NOT IN (?)`,
+                        [eventId, activeProductDetailIds]
+                    );
+                } else if (dto.products.length === 0) {
+                    await poolConn.query(`DELETE FROM detalle_evento WHERE evento_id = ?`, [eventId]);
+                }
+
+                for (let i = 0; i < dto.products.length; i++) {
+                    const prod = dto.products[i];
+                    if (prod.row_status === 'deleted' || prod.row_status === 'cancelled') {
+                        if (prod.id) {
+                            await poolConn.query(`DELETE FROM detalle_evento WHERE id = ?`, [prod.id]);
+                        }
+                        continue;
+                    }
+
+                    if (prod.id && Number(prod.id) > 0) {
+                        await poolConn.query(
+                            `UPDATE detalle_evento SET 
+                                producto_id = ?, 
+                                cantidad = ?, 
+                                precio_producto = ?, 
+                                descuento = ?, 
+                                dias = ?, 
+                                row_position = ?,
+                                updated_at = NOW()
+                             WHERE id = ? AND evento_id = ?`,
+                            [
+                                prod.producto_id,
+                                prod.cantidad,
+                                prod.precio_producto,
+                                prod.descuento || 0,
+                                prod.dias || 1,
+                                prod.row_position !== undefined ? prod.row_position : i,
+                                prod.id,
+                                eventId
+                            ]
+                        );
+                    } else {
+                        await poolConn.query(
+                            `INSERT INTO detalle_evento (
+                                evento_id, producto_id, cantidad, precio_producto,
+                                descuento, dias, row_position, cantidad_recibida,
+                                agregado_por, agregado_en, created_at, updated_at
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, 'c', NOW(), NOW())`,
+                            [
+                                eventId,
+                                prod.producto_id,
+                                prod.cantidad,
+                                prod.precio_producto,
+                                prod.descuento || 0,
+                                prod.dias || 1,
+                                prod.row_position !== undefined ? prod.row_position : i,
+                                userName || 'Sistema'
+                            ]
+                        );
+                    }
+                }
+            }
+
+            // Reconciliación de Secciones y Notas (detalle_evento_content)
+            if (dto.contents) {
+                const activeContentIds = dto.contents
+                    .filter(c => c.row_status !== 'deleted' && c.id && Number(c.id) > 0)
+                    .map(c => Number(c.id));
+
+                if (activeContentIds.length > 0) {
+                    await poolConn.query(
+                        `DELETE FROM detalle_evento_content WHERE evento_id = ? AND id NOT IN (?)`,
+                        [eventId, activeContentIds]
+                    );
+                } else if (dto.contents.length === 0) {
+                    await poolConn.query(`DELETE FROM detalle_evento_content WHERE evento_id = ?`, [eventId]);
+                }
+
+                for (let i = 0; i < dto.contents.length; i++) {
+                    const cont = dto.contents[i];
+                    if (cont.row_status === 'deleted') {
+                        if (cont.id) {
+                            await poolConn.query(`DELETE FROM detalle_evento_content WHERE id = ?`, [cont.id]);
+                        }
+                        continue;
+                    }
+
+                    if (cont.id && Number(cont.id) > 0) {
+                        await poolConn.query(
+                            `UPDATE detalle_evento_content SET 
+                                content_seccion = ?, 
+                                type = ?, 
+                                row_position = ?,
+                                updated_at = NOW()
+                             WHERE id = ? AND evento_id = ?`,
+                            [
+                                cont.content_seccion,
+                                cont.type,
+                                cont.row_position !== undefined ? cont.row_position : i,
+                                cont.id,
+                                eventId
+                            ]
+                        );
+                    } else {
+                        await poolConn.query(
+                            `INSERT INTO detalle_evento_content (
+                                evento_id, content_seccion, type, row_position, created_at, updated_at
+                            ) VALUES (?, ?, ?, ?, NOW(), NOW())`,
+                            [
+                                eventId,
+                                cont.content_seccion,
+                                cont.type,
+                                cont.row_position !== undefined ? cont.row_position : i
+                            ]
+                        );
+                    }
+                }
+            }
+
+            await poolConn.commit();
+
+            const [evtRows] = await poolConn.query<RowDataPacket[]>(`SELECT url_seguimiento FROM evento WHERE id = ?`, [eventId]);
+            const url_seguimiento = evtRows[0]?.url_seguimiento || '';
+
+            return {
+                id: eventId,
+                message: action === "Creación" ? "Cotización creada con éxito" : "Cotización actualizada con éxito",
+                url_seguimiento
+            };
+
+        } catch (error) {
+            await poolConn.rollback();
+            console.error('Error in saveOrUpdateQuote:', error);
+            throw error;
+        } finally {
+            poolConn.release();
+        }
+    }
 }
