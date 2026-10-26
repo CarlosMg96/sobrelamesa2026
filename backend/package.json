@@ -6,7 +6,8 @@
   "scripts": {
     "test": "jest",
     "build": "tsc",
-    "dev": "nodemon --exec ts-node src/server.ts"
+    "dev": "nodemon --exec ts-node src/server.ts",
+    "hash:passwords": "ts-node scripts/update-passwords.ts"
   },
   "keywords": [],
   "author": "",
