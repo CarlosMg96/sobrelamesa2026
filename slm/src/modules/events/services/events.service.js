@@ -69,3 +69,13 @@ export const saveQuoteService = async (payload) => {
         throw error;
     }
 };
+
+export const authorizeStockProductService = async (password) => {
+    try {
+        const { data } = await axiosClientApi.doPost('/events/v1/authorize-stock-product', { password });
+        return data;
+    } catch (error) {
+        console.error('Error en authorizeStockProductService:', error);
+        throw error;
+    }
+};

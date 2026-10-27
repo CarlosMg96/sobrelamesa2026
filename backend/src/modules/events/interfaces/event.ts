@@ -65,6 +65,8 @@ export interface QuoteProductItem {
     stock?: number;
     disponible?: number;
     sobrevendido?: boolean;
+    status_authorized?: number | boolean;
+    quantity_authorized?: number;
     subtotal?: number;
 }
 

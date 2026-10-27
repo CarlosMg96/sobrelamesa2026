@@ -539,6 +539,9 @@ export class EventsMySQLRepository implements EventRepository {
                        COALESCE(de.descuento, 0) AS descuento,
                        COALESCE(de.dias, 1) AS dias,
                        COALESCE(de.row_position, 0) AS row_position,
+                       COALESCE(de.authorized, 0) AS status_authorized,
+                       pa.id AS pa_id,
+                       pa.cantidad AS pa_cantidad,
                        p.clave,
                        p.producto,
                        p.imagen,
@@ -548,26 +551,33 @@ export class EventsMySQLRepository implements EventRepository {
                 FROM detalle_evento de
                 JOIN producto p ON p.id = de.producto_id
                 LEFT JOIN categoria_producto cp ON cp.id = p.categoria_producto_id
+                LEFT JOIN producto_autorizado pa ON pa.detalle_id = de.id
                 WHERE de.evento_id = ?
                 ORDER BY de.row_position ASC, de.id ASC
             `;
             const [productRows] = await db.query<RowDataPacket[]>(productsSql, [event_id]);
-            const products: QuoteProductItem[] = productRows.map(r => ({
-                id: Number(r.id),
-                producto_id: Number(r.producto_id),
-                cantidad: Number(r.cantidad),
-                precio_producto: Number(r.precio_producto),
-                descuento: Number(r.descuento) || 0,
-                dias: Number(r.dias) || 1,
-                row_position: Number(r.row_position) || 0,
-                row_status: 'exists',
-                clave: r.clave,
-                producto: r.producto,
-                imagen: r.imagen,
-                categoria: r.categoria,
-                stock: Number(r.stock) || 0,
-                subtotal: (Number(r.cantidad) * Number(r.precio_producto) * (Number(r.dias) || 1)) * (1 - (Number(r.descuento) || 0) / 100)
-            }));
+            const products: QuoteProductItem[] = productRows.map(r => {
+                const isAuth = Number(r.status_authorized) === 1 || Number(r.pa_id) > 0;
+                const qtyAuth = isAuth ? Number(r.pa_cantidad || r.cantidad) : 0;
+                return {
+                    id: Number(r.id),
+                    producto_id: Number(r.producto_id),
+                    cantidad: Number(r.cantidad),
+                    precio_producto: Number(r.precio_producto),
+                    descuento: Number(r.descuento) || 0,
+                    dias: Number(r.dias) || 1,
+                    row_position: Number(r.row_position) || 0,
+                    row_status: 'exists',
+                    status_authorized: isAuth ? 1 : 0,
+                    quantity_authorized: qtyAuth,
+                    clave: r.clave,
+                    producto: r.producto,
+                    imagen: r.imagen,
+                    categoria: r.categoria,
+                    stock: Number(r.stock) || 0,
+                    subtotal: (Number(r.cantidad) * Number(r.precio_producto) * (Number(r.dias) || 1)) * (1 - (Number(r.descuento) || 0) / 100)
+                };
+            });
 
             const contentsSql = `
                 SELECT id, evento_id, content_seccion, type, row_position
@@ -673,6 +683,23 @@ export class EventsMySQLRepository implements EventRepository {
                 places: [],
                 paymentTypes: []
             };
+        }
+    }
+
+    async authorizeStockProduct(password: string): Promise<{ authorized: boolean; message: string }> {
+        try {
+            if (!password || !password.trim()) {
+                return { authorized: false, message: 'Contraseña requerida' };
+            }
+            const sql = `SELECT id FROM users WHERE pwds = ? AND status = 1 LIMIT 1`;
+            const [rows] = await db.query<RowDataPacket[]>(sql, [password.trim()]);
+            if (rows && rows.length > 0) {
+                return { authorized: true, message: 'Producto autorizado correctamente' };
+            }
+            return { authorized: false, message: 'Contraseña de autorización incorrecta' };
+        } catch (error) {
+            console.error('Error in authorizeStockProduct:', error);
+            return { authorized: false, message: 'Ocurrió un error al validar la contraseña' };
         }
     }
 
@@ -800,10 +827,15 @@ export class EventsMySQLRepository implements EventRepository {
 
                 if (activeProductDetailIds.length > 0) {
                     await poolConn.query(
+                        `DELETE FROM producto_autorizado WHERE evento_id = ? AND detalle_id NOT IN (?)`,
+                        [eventId, activeProductDetailIds]
+                    );
+                    await poolConn.query(
                         `DELETE FROM detalle_evento WHERE evento_id = ? AND id NOT IN (?)`,
                         [eventId, activeProductDetailIds]
                     );
                 } else if (dto.products.length === 0) {
+                    await poolConn.query(`DELETE FROM producto_autorizado WHERE evento_id = ?`, [eventId]);
                     await poolConn.query(`DELETE FROM detalle_evento WHERE evento_id = ?`, [eventId]);
                 }
 
@@ -811,12 +843,17 @@ export class EventsMySQLRepository implements EventRepository {
                     const prod = dto.products[i];
                     if (prod.row_status === 'deleted' || prod.row_status === 'cancelled') {
                         if (prod.id) {
+                            await poolConn.query(`DELETE FROM producto_autorizado WHERE detalle_id = ?`, [prod.id]);
                             await poolConn.query(`DELETE FROM detalle_evento WHERE id = ?`, [prod.id]);
                         }
                         continue;
                     }
 
-                    if (prod.id && Number(prod.id) > 0) {
+                    const isAuthorized = prod.status_authorized === 1 || prod.status_authorized === true ? 1 : 0;
+                    const rowPos = prod.row_position !== undefined ? prod.row_position : i;
+                    let detailId = Number(prod.id) || 0;
+
+                    if (detailId > 0) {
                         await poolConn.query(
                             `UPDATE detalle_evento SET 
                                 producto_id = ?, 
@@ -825,6 +862,7 @@ export class EventsMySQLRepository implements EventRepository {
                                 descuento = ?, 
                                 dias = ?, 
                                 row_position = ?,
+                                authorized = ?,
                                 updated_at = NOW()
                              WHERE id = ? AND evento_id = ?`,
                             [
@@ -833,18 +871,19 @@ export class EventsMySQLRepository implements EventRepository {
                                 prod.precio_producto,
                                 prod.descuento || 0,
                                 prod.dias || 1,
-                                prod.row_position !== undefined ? prod.row_position : i,
-                                prod.id,
+                                rowPos,
+                                isAuthorized,
+                                detailId,
                                 eventId
                             ]
                         );
                     } else {
-                        await poolConn.query(
+                        const [detInsertRes]: any = await poolConn.query(
                             `INSERT INTO detalle_evento (
                                 evento_id, producto_id, cantidad, precio_producto,
                                 descuento, dias, row_position, cantidad_recibida,
-                                agregado_por, agregado_en, created_at, updated_at
-                            ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, 'c', NOW(), NOW())`,
+                                agregado_por, agregado_en, authorized, created_at, updated_at
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, 'c', ?, NOW(), NOW())`,
                             [
                                 eventId,
                                 prod.producto_id,
@@ -852,9 +891,42 @@ export class EventsMySQLRepository implements EventRepository {
                                 prod.precio_producto,
                                 prod.descuento || 0,
                                 prod.dias || 1,
-                                prod.row_position !== undefined ? prod.row_position : i,
-                                userName || 'Sistema'
+                                rowPos,
+                                userName || 'Sistema',
+                                isAuthorized
                             ]
+                        );
+                        detailId = detInsertRes.insertId;
+                    }
+
+                    // Sincronizar con tabla producto_autorizado (igual que en php7/slm)
+                    if (isAuthorized === 1 && detailId > 0) {
+                        const [existingAuth] = await poolConn.query<RowDataPacket[]>(
+                            `SELECT id FROM producto_autorizado WHERE evento_id = ? AND detalle_id = ? LIMIT 1`,
+                            [eventId, detailId]
+                        );
+                        if (existingAuth && existingAuth.length > 0) {
+                            await poolConn.query(
+                                `UPDATE producto_autorizado SET 
+                                    producto_id = ?, 
+                                    cantidad = ?, 
+                                    row_position = ?, 
+                                    updated_at = NOW() 
+                                 WHERE id = ?`,
+                                [prod.producto_id, prod.cantidad, rowPos, existingAuth[0].id]
+                            );
+                        } else {
+                            await poolConn.query(
+                                `INSERT INTO producto_autorizado (
+                                    evento_id, producto_id, detalle_id, agente_id, row_position, cantidad, created_at, updated_at
+                                ) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+                                [eventId, prod.producto_id, detailId, userId || dto.agente_id || 1, rowPos, prod.cantidad]
+                            );
+                        }
+                    } else if (detailId > 0) {
+                        await poolConn.query(
+                            `DELETE FROM producto_autorizado WHERE evento_id = ? AND detalle_id = ?`,
+                            [eventId, detailId]
                         );
                     }
                 }

@@ -129,7 +129,13 @@ export default function QuoteEditor() {
 
                         // Unificar products y contents ordenados por row_position
                         const unifiedItems = [
-                            ...products.map(p => ({ ...p, type: 'product', row_status: 'exists' })),
+                            ...products.map(p => ({
+                                ...p,
+                                type: 'product',
+                                row_status: 'exists',
+                                status_authorized: Number(p.status_authorized) === 1 ? 1 : 0,
+                                quantity_authorized: Number(p.quantity_authorized || (Number(p.status_authorized) === 1 ? p.cantidad : 0))
+                            })),
                             ...contents.map(c => ({
                                 ...c,
                                 type: c.type === 3 ? 'section' : 'note',
@@ -207,6 +213,8 @@ export default function QuoteEditor() {
             categoria: productToAdd.categoria,
             stock: productToAdd.stock,
             available: productToAdd.available,
+            status_authorized: 0,
+            quantity_authorized: 0,
             subtotal: sub
         };
 
@@ -293,15 +301,19 @@ export default function QuoteEditor() {
                         row_status: item.row_status
                     });
                 } else {
+                    const qty = Number(item.cantidad) || 1;
+                    const isAuth = Number(item.status_authorized) === 1 && Number(item.quantity_authorized ?? qty) === qty ? 1 : 0;
                     productsPayload.push({
                         id: item.id,
                         producto_id: item.producto_id || item.id,
-                        cantidad: Number(item.cantidad) || 1,
+                        cantidad: qty,
                         precio_producto: Number(item.precio_producto) || 0,
                         descuento: Number(item.descuento) || 0,
                         dias: Number(item.dias) || 1,
                         row_position: pos,
-                        row_status: item.row_status
+                        row_status: item.row_status,
+                        status_authorized: isAuth,
+                        quantity_authorized: isAuth ? qty : 0
                     });
                 }
             });

@@ -186,4 +186,18 @@ export class EventController {
         }
     }
 
+    async authorizeStockProduct(req: Request, res: Response) {
+        try {
+            const { password } = req.body;
+            if (!password) {
+                return sendResponse(res, 400, "Contraseña requerida", { authorized: false });
+            }
+            const result = await this.service.authorizeStockProduct(String(password));
+            return sendResponse(res, 200, result.message, result);
+        } catch (error) {
+            console.error("Error in authorizeStockProduct:", error);
+            return sendResponse(res, 500, "Error validating authorization password", error);
+        }
+    }
+
 }

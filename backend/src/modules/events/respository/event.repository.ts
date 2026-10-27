@@ -23,6 +23,7 @@ export interface EventRepository {
     getEventDetail(event_id: number): Promise<EventDetailResponse | null>;
     getCatalogs(): Promise<CatalogsResponse>;
     saveOrUpdateQuote(dto: SaveQuoteDTO, userId?: number, userName?: string): Promise<{ id: number; message: string; url_seguimiento?: string }>;
+    authorizeStockProduct(password: string): Promise<{ authorized: boolean; message: string }>;
     getSolvers(): Promise<{ id: number; name: string }[]>;
     createEvent(data: Array<Event>): Promise<Event | null>;
     updateEvent(data: Array<Event>): Promise<Event | null>;

@@ -69,4 +69,8 @@ export class EventService {
     async addComment(eventoId: number, comment: string, userId: number, userName: string): Promise<any> {
         return await this.repo.addComment(eventoId, comment, userId, userName);
     }
+
+    async authorizeStockProduct(password: string): Promise<{ authorized: boolean; message: string }> {
+        return await this.repo.authorizeStockProduct(password);
+    }
 }

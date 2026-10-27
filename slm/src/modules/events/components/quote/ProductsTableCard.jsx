@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { showToast, showConfirm } from '../../../../shared/utils/alerts';
+import { authorizeStockProductService } from '../../services/events.service';
 
 export default function ProductsTableCard({
     items,
@@ -13,6 +14,17 @@ export default function ProductsTableCard({
 }) {
     const [showAddCommentModal, setShowAddCommentModal] = useState(false);
     const [commentText, setCommentText] = useState('');
+
+    // Estado para modal de autorizar producto sobrevendido
+    const [oversellModal, setOversellModal] = useState({
+        isOpen: false,
+        itemIndex: null,
+        productName: '',
+        requestedQty: 0,
+        availableStock: 0
+    });
+    const [authPassword, setAuthPassword] = useState('');
+    const [authorizingOversell, setAuthorizingOversell] = useState(false);
 
     // Agregar Sección intermedia
     const handleAddSection = () => {
@@ -56,6 +68,18 @@ export default function ProductsTableCard({
             const days = Number(field === 'dias' ? value : item.dias) || 1;
             const disc = Number(field === 'descuento' ? value : item.descuento) || 0;
 
+            if (field === 'cantidad') {
+                const prodId = item.producto_id || item.id;
+                const availInfo = availabilityMap[prodId];
+                const availStock = availInfo ? availInfo.available : (item.available !== undefined ? item.available : item.stock);
+                if (qty <= Number(availStock || 0)) {
+                    item.status_authorized = 0;
+                    item.quantity_authorized = 0;
+                } else if (Number(item.quantity_authorized) !== qty) {
+                    item.status_authorized = 0;
+                }
+            }
+
             item.subtotal = (qty * price * days) * (1 - disc / 100);
             if (item.row_status !== 'new') {
                 item.row_status = 'modified';
@@ -64,6 +88,92 @@ export default function ProductsTableCard({
             copy[index] = item;
             return copy;
         });
+    };
+
+    // Abrir modal para sobrevender / autorizar producto sobrevendido (clickCheckStock en php7/slm)
+    const handleClickCheckStock = (index, item, availableStock) => {
+        const qty = Number(item.cantidad) || 0;
+        const avail = Number(availableStock) || 0;
+        const isAuth = Number(item.status_authorized) === 1 && Number(item.quantity_authorized ?? qty) === qty;
+
+        if (qty > avail && !isAuth) {
+            setOversellModal({
+                isOpen: true,
+                itemIndex: index,
+                productName: item.producto || '',
+                requestedQty: qty,
+                availableStock: avail
+            });
+            setAuthPassword('');
+        }
+    };
+
+    // Cancelar autorización de sobreventa: regresa la cantidad al stock disponible (handleCancelAuthorization en php7/slm)
+    const handleCancelAuthorization = () => {
+        const { itemIndex, availableStock } = oversellModal;
+        if (itemIndex !== null && items[itemIndex]) {
+            const safeStock = Math.max(0, Number(availableStock) || 0);
+            setItems(prev => {
+                const copy = [...prev];
+                const item = { ...copy[itemIndex] };
+                const price = Number(item.precio_producto) || 0;
+                const days = Number(item.dias) || 1;
+                const disc = Number(item.descuento) || 0;
+
+                item.cantidad = safeStock;
+                item.status_authorized = 0;
+                item.quantity_authorized = 0;
+                item.subtotal = (safeStock * price * days) * (1 - disc / 100);
+                if (item.row_status !== 'new') {
+                    item.row_status = 'modified';
+                }
+                copy[itemIndex] = item;
+                return copy;
+            });
+        }
+        setOversellModal({ isOpen: false, itemIndex: null, productName: '', requestedQty: 0, availableStock: 0 });
+        setAuthPassword('');
+    };
+
+    // Confirmar contraseña para sobrevender producto (submitProductAuthorization en php7/slm)
+    const handleSubmitProductAuthorization = async (e) => {
+        if (e) e.preventDefault();
+        if (!authPassword.trim()) {
+            showToast('Por favor ingrese la contraseña de autorización', 'error');
+            return;
+        }
+
+        setAuthorizingOversell(true);
+        try {
+            const res = await authorizeStockProductService(authPassword.trim());
+            if (res?.data?.authorized) {
+                const { itemIndex } = oversellModal;
+                if (itemIndex !== null) {
+                    setItems(prev => {
+                        const copy = [...prev];
+                        const item = { ...copy[itemIndex] };
+                        const qty = Number(item.cantidad) || 0;
+                        item.status_authorized = 1;
+                        item.quantity_authorized = qty;
+                        if (item.row_status !== 'new') {
+                            item.row_status = 'modified';
+                        }
+                        copy[itemIndex] = item;
+                        return copy;
+                    });
+                }
+                showToast('Producto autorizado correctamente', 'success');
+                setOversellModal({ isOpen: false, itemIndex: null, productName: '', requestedQty: 0, availableStock: 0 });
+                setAuthPassword('');
+            } else {
+                showToast(res?.message || 'Contraseña de autorización incorrecta', 'error');
+            }
+        } catch (err) {
+            console.error('Error al autorizar sobreventa:', err);
+            showToast(err?.response?.data?.message || 'Contraseña de autorización incorrecta', 'error');
+        } finally {
+            setAuthorizingOversell(false);
+        }
     };
 
     // Actualizar texto de sección o nota
@@ -306,13 +416,20 @@ export default function ProductsTableCard({
                                     const prodId = item.producto_id || item.id;
                                     const availInfo = availabilityMap[prodId];
                                     const availableStock = availInfo ? availInfo.available : (item.available !== undefined ? item.available : item.stock);
-                                    const isOversold = Number(item.cantidad) > Number(availableStock);
+                                    const currentQty = Number(item.cantidad) || 0;
+                                    const availQty = Number(availableStock) || 0;
+                                    const isOversold = currentQty > availQty;
+                                    const isAuthorizedForCurrentQty = Boolean(
+                                        Number(item.status_authorized) === 1 &&
+                                        Number(item.quantity_authorized ?? currentQty) === currentQty
+                                    );
+                                    const isUnauthorizedOversold = isOversold && !isAuthorizedForCurrentQty;
 
                                     return (
                                         <tr
                                             key={`prod-${prodId}-${index}`}
                                             className={index % 2 === 1 ? 'bg-light-subtle' : ''}
-                                            style={{ backgroundColor: isOversold ? '#fff1f2' : undefined }}
+                                            style={{ backgroundColor: isUnauthorizedOversold ? '#fff1f2' : undefined }}
                                         >
                                             {/* Drag handle */}
                                             <td className="text-center text-muted" style={{ cursor: 'grab' }}>
@@ -335,18 +452,43 @@ export default function ProductsTableCard({
                                                 </span>
                                             </td>
 
-                                            {/* CANTIDAD con check */}
+                                            {/* CANTIDAD con botón check / X para sobrevender */}
                                             <td className="text-center">
                                                 <div className="d-flex align-items-center justify-content-center gap-1">
                                                     <input
                                                         type="number"
-                                                        min="1"
+                                                        min="0"
                                                         className="form-control form-control-sm text-center fw-bold rounded-3"
-                                                        style={{ width: '70px', borderColor: '#cbd5e1' }}
-                                                        value={item.cantidad || 1}
+                                                        style={{ width: '70px', borderColor: isUnauthorizedOversold ? '#ef4444' : '#cbd5e1' }}
+                                                        value={item.cantidad ?? 1}
                                                         onChange={(e) => handleProductChange(index, 'cantidad', e.target.value)}
                                                     />
-                                                    <i className="bi bi-check-lg text-secondary small"></i>
+                                                    <button
+                                                        id={`btn-check-quantity-${index}`}
+                                                        type="button"
+                                                        onClick={() => handleClickCheckStock(index, item, availableStock)}
+                                                        className={`btn btn-sm ${
+                                                            isUnauthorizedOversold ? 'btn-danger' : 'btn-light border'
+                                                        } shadow-sm rounded-circle p-0 d-flex align-items-center justify-content-center`}
+                                                        style={{
+                                                            width: '28px',
+                                                            height: '28px',
+                                                            cursor: isUnauthorizedOversold ? 'pointer' : 'default'
+                                                        }}
+                                                        title={
+                                                            isUnauthorizedOversold
+                                                                ? 'Producto sobrevendido: Haz clic para autorizar / sobrevender'
+                                                                : isOversold && isAuthorizedForCurrentQty
+                                                                    ? 'Sobreventa autorizada'
+                                                                    : 'Stock disponible'
+                                                        }
+                                                    >
+                                                        {isUnauthorizedOversold ? (
+                                                            <i className="bi bi-x-lg text-white" style={{ fontSize: '0.75rem' }}></i>
+                                                        ) : (
+                                                            <i className={`bi bi-check-lg ${isOversold && isAuthorizedForCurrentQty ? 'text-success fw-bold' : 'text-muted'}`}></i>
+                                                        )}
+                                                    </button>
                                                 </div>
                                             </td>
 
@@ -518,6 +660,71 @@ export default function ProductsTableCard({
                                     Guardar Comentario
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal para autorizar producto sobrevendido (tomado de php7/slm) */}
+            {oversellModal.isOpen && (
+                <div
+                    className="modal show d-block"
+                    tabIndex="-1"
+                    role="dialog"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1065 }}
+                >
+                    <div className="modal-dialog modal-dialog-centered" role="document">
+                        <div className="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+                            <div className="modal-header bg-danger text-white border-0">
+                                <h5 className="modal-title fw-bold d-flex align-items-center gap-2">
+                                    <i className="bi bi-exclamation-triangle-fill"></i>
+                                    <span>Autorizar Producto Sobrevendido</span>
+                                </h5>
+                                <button
+                                    type="button"
+                                    className="btn-close btn-close-white"
+                                    aria-label="Cerrar"
+                                    onClick={handleCancelAuthorization}
+                                ></button>
+                            </div>
+                            <form onSubmit={handleSubmitProductAuthorization}>
+                                <div className="modal-body p-4">
+                                    <p className="mb-3 text-dark">
+                                        El producto <strong>{oversellModal.productName}</strong> requiere autorización ya que la cantidad solicitada (<strong>{oversellModal.requestedQty}</strong>) supera el stock disponible (<strong>{oversellModal.availableStock}</strong>).
+                                    </p>
+                                    <div className="form-group">
+                                        <label htmlFor="auth_password" className="form-label fw-semibold small text-muted">
+                                            Contraseña de Autorización
+                                        </label>
+                                        <input
+                                            type="password"
+                                            id="auth_password"
+                                            className="form-control rounded-3"
+                                            placeholder="Ingrese contraseña"
+                                            value={authPassword}
+                                            onChange={(e) => setAuthPassword(e.target.value)}
+                                            autoFocus
+                                        />
+                                    </div>
+                                </div>
+                                <div className="modal-footer border-top bg-light-subtle">
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary rounded-pill px-4"
+                                        onClick={handleCancelAuthorization}
+                                        disabled={authorizingOversell}
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="btn btn-danger rounded-pill px-4 fw-semibold"
+                                        disabled={authorizingOversell}
+                                    >
+                                        {authorizingOversell ? 'Autorizando...' : 'Sobrevender / Autorizar'}
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
