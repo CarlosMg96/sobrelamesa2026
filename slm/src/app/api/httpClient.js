@@ -1,7 +1,8 @@
 import axios from 'axios'
 import { setupInterceptors } from './interceptors'
 
-const SERVER_URL = process.env.REACT_APP_SERVER_URL || 'http://localhost:3000'
+const rawUrl = process.env.REACT_APP_SERVER_URL || 'http://localhost:3000/api'
+const SERVER_URL = rawUrl.endsWith('/api') ? rawUrl : `${rawUrl.replace(/\/+$/, '')}/api`
 
 const httpClient = axios.create({
     baseURL: SERVER_URL,

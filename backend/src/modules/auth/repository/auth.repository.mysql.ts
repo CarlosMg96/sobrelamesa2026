@@ -66,7 +66,7 @@ export class AuthMySQLRepository implements AuthRepository {
 
     async me(id: number): Promise<AuthUser | null> {
         const sql = `
-            SELECT id, email, tipo_usuario, status, hashed_refresh_token
+            SELECT id, email, name, tipo_usuario, status
             FROM users
             WHERE id = ?
             LIMIT 1
@@ -80,6 +80,7 @@ export class AuthMySQLRepository implements AuthRepository {
             const result: AuthUser = {
                 id: (row as any).id,
                 email: (row as any).email,
+                name: (row as any).name,
                 password: "",
                 tipo_usuario: (row as any).tipo_usuario,
                 status: (row as any).status,

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { getEventsListService, getSolversService } from '../services/events.service';
+import { showToast, showConfirm } from '../../../shared/utils/alerts';
 
 // Formato de fecha en español idéntico al legacy: "domingo, 25 de octubre de 2026"
 const formatDateES = (dateStr) => {
@@ -33,6 +35,7 @@ const formatDateES = (dateStr) => {
 };
 
 export default function ListEvents() {
+  const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [solvers, setSolvers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -405,6 +408,15 @@ export default function ListEvents() {
 
           {/* Right Top Actions */}
           <div className="slm-filter-top-actions">
+            {/* Botón Nueva Cotización */}
+            <Link
+              to="/events/new"
+              className="btn btn-primary rounded-pill px-3 shadow-sm d-flex align-items-center gap-1"
+            >
+              <i className="bi bi-plus-lg"></i>
+              <span>Nueva Cotización</span>
+            </Link>
+
             {/* Botón Por Autorizar con Badge */}
             <button
               type="button"
@@ -563,122 +575,123 @@ export default function ListEvents() {
         </div>
       </div>
 
-      {/* FLOATING TABLE (Identical to legacy structure) */}
-      <div className="table-responsive table-events-wrapper">
-        <table className="table table-borderless table-custom">
-          <thead>
-            <tr>
-              <th className="text-center" style={{ width: '11%' }}>Folio</th>
-              <th className="text-center" style={{ width: '10%' }}>Estatus de Ventas</th>
-              <th className="text-center" style={{ width: '9%' }}>Inventario</th>
-              <th className="text-center" style={{ width: '14%' }}>Cliente / Contacto</th>
-              <th className="text-center" style={{ width: '12%' }}>Table Solver</th>
-              <th className="text-center" style={{ width: '11%' }}>Pagos</th>
-              <th className="text-center" style={{ width: '11%' }}>Depósito</th>
-              <th className="text-center" style={{ width: '13%' }}>Logística</th>
-              <th className="text-center" style={{ width: '10%' }}>Estado Logística</th>
-              <th className="text-center" style={{ width: '9%' }}>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
+      {/* TABLA PRINCIPAL HOMOGENIZADA */}
+      <div className="slm-table-card">
+        <div className="table-responsive">
+          <table className="table table-custom">
+            <thead>
               <tr>
-                <td colSpan={10} className="text-center py-5">
-                  <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Cargando...</span>
-                  </div>
-                  <div className="text-muted small mt-2">Cargando cotizaciones...</div>
-                </td>
+                <th className="text-center" style={{ width: '10%' }}>Folio</th>
+                <th className="text-center" style={{ width: '10%' }}>Estatus de Ventas</th>
+                <th className="text-center" style={{ width: '9%' }}>Inventario</th>
+                <th className="text-start ps-3" style={{ width: '15%' }}>Cliente / Contacto</th>
+                <th className="text-start ps-3" style={{ width: '12%' }}>Table Solver</th>
+                <th className="text-center" style={{ width: '11%' }}>Pagos</th>
+                <th className="text-center" style={{ width: '11%' }}>Depósito</th>
+                <th className="text-start ps-3" style={{ width: '13%' }}>Logística</th>
+                <th className="text-center" style={{ width: '10%' }}>Estado Logística</th>
+                <th className="text-center" style={{ width: '9%' }}>Acciones</th>
               </tr>
-            ) : events.length === 0 ? (
-              <tr>
-                <td colSpan={10} className="text-center py-5 text-muted">
-                  No se encontraron cotizaciones con los filtros seleccionados.
-                </td>
-              </tr>
-            ) : (
-              events.map((evt) => {
-                const isDropdownOpen = openDropdownId === evt.id;
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={10} className="text-center py-5">
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">Cargando...</span>
+                    </div>
+                    <div className="text-muted small mt-2">Cargando cotizaciones...</div>
+                  </td>
+                </tr>
+              ) : events.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="text-center py-5 text-muted">
+                    No se encontraron cotizaciones con los filtros seleccionados.
+                  </td>
+                </tr>
+              ) : (
+                events.map((evt) => {
+                  const isDropdownOpen = openDropdownId === evt.id;
 
-                return (
-                  <tr key={evt.id}>
-                    {/* 1. FOLIO */}
-                    <td className="text-center align-middle">
-                      <div className="d-flex flex-column align-items-center">
-                        <div className="d-flex align-items-center gap-1">
-                          <span className="fw-bold">CO-00{evt.id}</span>
-                          {(evt.status_firmas || evt.firma) && (
-                            <span
-                              className="cat-badge-icon"
-                              title="Cotización Firmada"
-                              style={{ width: 20, height: 20, fontSize: '0.65rem' }}
-                            >
-                              <i className="bi bi-pen"></i>
-                            </span>
+                  return (
+                    <tr key={evt.id}>
+                      {/* 1. FOLIO */}
+                      <td className="text-center align-middle">
+                        <div className="d-flex flex-column align-items-center">
+                          <div className="d-flex align-items-center gap-1">
+                            <span className="fw-bold">CO-00{evt.id}</span>
+                            {(evt.status_firmas || evt.firma) && (
+                              <span
+                                className="cat-badge-icon"
+                                title="Cotización Firmada"
+                                style={{ width: 20, height: 20, fontSize: '0.65rem' }}
+                              >
+                                <i className="bi bi-pen"></i>
+                              </span>
+                            )}
+                          </div>
+                          {renderCategoryIcons(evt.categorias)}
+                        </div>
+                      </td>
+
+                      {/* 2. ESTATUS DE VENTAS */}
+                      <td className="text-center align-middle">
+                        {renderStatusBadge(evt.estatus)}
+                      </td>
+
+                      {/* 3. INVENTARIO */}
+                      <td className="text-center align-middle">
+                        {Number(evt.status_sobrevendido) === 1 ? (
+                          <span className="badge badge-custom badge-sobrevendido">Sobrevendido</span>
+                        ) : (
+                          <span className="badge badge-custom badge-disponible">Disponible</span>
+                        )}
+                      </td>
+
+                      {/* 4. CLIENTE / CONTACTO */}
+                      <td className="text-start ps-3 align-middle">
+                        <div>
+                          <div className="fw-bold text-dark">{evt.cliente || '-'}</div>
+                          {evt.empresa && (
+                            <div className="text-muted small text-uppercase">{evt.empresa}</div>
+                          )}
+                          {evt.num_tel ? (
+                            <div className="text-muted small">
+                              <i className="bi bi-telephone-fill me-1"></i>
+                              {evt.num_tel}
+                            </div>
+                          ) : (
+                            <div className="text-muted small">
+                              <i className="bi bi-telephone-fill"></i>
+                            </div>
                           )}
                         </div>
-                        {renderCategoryIcons(evt.categorias)}
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* 2. ESTATUS DE VENTAS */}
-                    <td className="text-center align-middle">
-                      {renderStatusBadge(evt.estatus)}
-                    </td>
+                      {/* 5. TABLE SOLVER */}
+                      <td className="text-start ps-3 align-middle">
+                        <span className="fw-medium">{evt.agente || 'Desconocido'}</span>
+                      </td>
 
-                    {/* 3. INVENTARIO */}
-                    <td className="text-center align-middle">
-                      {Number(evt.status_sobrevendido) === 1 ? (
-                        <span className="badge badge-custom badge-sobrevendido">Sobrevendido</span>
-                      ) : (
-                        <span className="badge badge-custom badge-disponible">Disponible</span>
-                      )}
-                    </td>
+                      {/* 6. PAGOS */}
+                      <td className="text-center align-middle">
+                        {renderPaymentBadge(evt)}
+                      </td>
 
-                    {/* 4. CLIENTE / CONTACTO */}
-                    <td className="text-center align-middle">
-                      <div>
-                        <div className="fw-bold">{evt.cliente || '-'}</div>
-                        {evt.empresa && (
-                          <div className="text-muted small text-uppercase">{evt.empresa}</div>
-                        )}
-                        {evt.num_tel ? (
-                          <div className="text-muted small">
-                            <i className="bi bi-telephone-fill me-1"></i>
-                            {evt.num_tel}
-                          </div>
-                        ) : (
-                          <div className="text-muted small">
-                            <i className="bi bi-telephone-fill"></i>
-                          </div>
-                        )}
-                      </div>
-                    </td>
+                      {/* 7. DEPÓSITO */}
+                      <td className="text-center align-middle">
+                        {renderDepositBadge(evt)}
+                      </td>
 
-                    {/* 5. TABLE SOLVER */}
-                    <td className="text-center align-middle">
-                      <span className="fw-medium">{evt.agente || 'Desconocido'}</span>
-                    </td>
-
-                    {/* 6. PAGOS */}
-                    <td className="text-center align-middle">
-                      {renderPaymentBadge(evt)}
-                    </td>
-
-                    {/* 7. DEPÓSITO */}
-                    <td className="text-center align-middle">
-                      {renderDepositBadge(evt)}
-                    </td>
-
-                    {/* 8. LOGÍSTICA */}
-                    <td className="text-center align-middle">
-                      <div className="small">
-                        <span className="text-muted d-block">Fecha del Evento:</span>
-                        <span className="fw-medium text-capitalize">
-                          {formatDateES(evt.fecha_evento)}
-                        </span>
-                      </div>
-                    </td>
+                      {/* 8. LOGÍSTICA */}
+                      <td className="text-start ps-3 align-middle">
+                        <div className="small">
+                          <span className="text-muted d-block">Fecha del Evento:</span>
+                          <span className="fw-medium text-capitalize">
+                            {formatDateES(evt.fecha_evento)}
+                          </span>
+                        </div>
+                      </td>
 
                     {/* 9. ESTADO LOGÍSTICA */}
                     <td className="text-center align-middle">
@@ -703,7 +716,7 @@ export default function ListEvents() {
                           type="button"
                           className="action-btn"
                           title="Editar cotización"
-                          onClick={() => alert(`Editar evento #${evt.id}`)}
+                          onClick={() => navigate(`/events/edit/${evt.id}`)}
                         >
                           <i className="bi bi-pencil"></i>
                         </button>
@@ -724,6 +737,18 @@ export default function ListEvents() {
                           {/* Action Dropdown Menu */}
                           {isDropdownOpen && (
                             <ul className="slm-table-dropdown shadow">
+                              <li>
+                                <button
+                                  type="button"
+                                  className="slm-table-dropdown-item"
+                                  onClick={() => {
+                                    setOpenDropdownId(null);
+                                    navigate(`/events/edit/${evt.id}`);
+                                  }}
+                                >
+                                  <i className="bi bi-pencil text-muted"></i> Editar Cotización
+                                </button>
+                              </li>
                               <li>
                                 <button
                                   type="button"
@@ -766,7 +791,7 @@ export default function ListEvents() {
                                   className="slm-table-dropdown-item"
                                   onClick={() => {
                                     setOpenDropdownId(null);
-                                    alert(`Evento #${evt.id} autorizado exitosamente`);
+                                    showToast(`Evento #${evt.id} autorizado exitosamente`, 'success');
                                   }}
                                 >
                                   <i className="bi bi-check-circle text-muted"></i> Autorizar
@@ -788,9 +813,16 @@ export default function ListEvents() {
                                 <button
                                   type="button"
                                   className="slm-table-dropdown-item"
-                                  onClick={() => {
+                                  onClick={async () => {
                                     setOpenDropdownId(null);
-                                    alert(`Cotización #${evt.id} confirmada`);
+                                    const res = await showConfirm({
+                                      title: '¿Confirmar cotización?',
+                                      text: `¿Deseas confirmar la cotización #${evt.id}?`,
+                                      confirmButtonText: 'Sí, confirmar'
+                                    });
+                                    if (res.isConfirmed) {
+                                      showToast(`Cotización #${evt.id} confirmada`, 'success');
+                                    }
                                   }}
                                 >
                                   <i className="bi bi-check-circle text-muted"></i> Confirmar Cotización
@@ -802,7 +834,7 @@ export default function ListEvents() {
                                   className="slm-table-dropdown-item"
                                   onClick={() => {
                                     setOpenDropdownId(null);
-                                    alert(`Generando nota de pérdida para evento #${evt.id}`);
+                                    showToast(`Generando nota de pérdida para evento #${evt.id}`, 'info');
                                   }}
                                 >
                                   <i className="bi bi-file-earmark-text text-muted"></i> Nota de Pérdida
@@ -815,7 +847,7 @@ export default function ListEvents() {
                                   className="slm-table-dropdown-item text-primary"
                                   onClick={() => {
                                     setOpenDropdownId(null);
-                                    alert(`Des-cancelando evento #${evt.id}`);
+                                    showToast(`Des-cancelando evento #${evt.id}`, 'info');
                                   }}
                                 >
                                   <i className="bi bi-arrow-counterclockwise text-primary"></i> Des-cancelar
@@ -827,7 +859,7 @@ export default function ListEvents() {
                                   className="slm-table-dropdown-item text-primary"
                                   onClick={() => {
                                     setOpenDropdownId(null);
-                                    alert(`Duplicando evento #${evt.id}`);
+                                    showToast(`Duplicando evento #${evt.id}`, 'info');
                                   }}
                                 >
                                   <i className="bi bi-copy text-primary"></i> Duplicar
@@ -837,9 +869,17 @@ export default function ListEvents() {
                                 <button
                                   type="button"
                                   className="slm-table-dropdown-item text-danger"
-                                  onClick={() => {
+                                  onClick={async () => {
                                     setOpenDropdownId(null);
-                                    alert(`Cancelando evento #${evt.id}`);
+                                    const res = await showConfirm({
+                                      title: '¿Cancelar evento?',
+                                      text: `¿Estás seguro de cancelar el evento #${evt.id}?`,
+                                      confirmButtonText: 'Sí, cancelar evento',
+                                      icon: 'warning'
+                                    });
+                                    if (res.isConfirmed) {
+                                      showToast(`Evento #${evt.id} cancelado`, 'info');
+                                    }
                                   }}
                                 >
                                   <i className="bi bi-x-circle text-danger"></i> Cancelar
@@ -857,6 +897,7 @@ export default function ListEvents() {
           </tbody>
         </table>
       </div>
+    </div>
 
       {/* PAGINATION CONTROLS (Identical to legacy) */}
       <div className="slm-pagination-row">

@@ -51,9 +51,43 @@ export class EventController {
         if (!id) {
             return sendResponse(res, 400, "Missing query parameters");
         }
+        const full = req.query.full !== 'false';
+        if (full) {
+            const result = await this.service.getEventDetail(Number(id));
+            if (!result) {
+                return sendResponse(res, 404, "Event not found");
+            }
+            return sendResponse(res, 200, "Event detail", result);
+        }
         const result = await this.service.getEventById(Number(id));
         return sendResponse(res, 200, "Event", result);
     }
+
+    async getCatalogs(req: Request, res: Response) {
+        try {
+            const catalogs = await this.service.getCatalogs();
+            return sendResponse(res, 200, "Catalogs retrieved successfully", catalogs);
+        } catch (error) {
+            console.error("Error in getCatalogs:", error);
+            return sendResponse(res, 500, "Error retrieving catalogs", error);
+        }
+    }
+
+    async saveQuote(req: Request, res: Response) {
+        try {
+            const user = (req as any).user;
+            const dto = req.body;
+            if (!dto.fecha_cotizacion || !dto.cliente_id || !dto.agente_id || !dto.fecha_evento) {
+                return sendResponse(res, 400, "Campos obligatorios faltantes: fecha_cotizacion, cliente_id, agente_id, fecha_evento");
+            }
+            const result = await this.service.saveOrUpdateQuote(dto, user?.id, user?.name);
+            return sendResponse(res, 200, result.message, result);
+        } catch (error) {
+            console.error("Error in saveQuote:", error);
+            return sendResponse(res, 500, "Error saving quote", error);
+        }
+    }
+
 
     async createEvent(req: Request, res: Response) {
         const { fecha_cotizacion, cliente_id, agente_id, estatus, tipo_venta, tipo_evento, no_personas, deposito, fecha_evento, hora_evento, fecha_entrega, hora_entrega, fecha_recoleccion, hora_recoleccion, tipo_pago, domicilio_entrega, domicilio_recoleccion, descuento } = req.body;
@@ -149,6 +183,20 @@ export class EventController {
         } catch (error) {
             console.error("Error in addComment:", error);
             return sendResponse(res, 500, "Error adding comment", error);
+        }
+    }
+
+    async authorizeStockProduct(req: Request, res: Response) {
+        try {
+            const { password } = req.body;
+            if (!password) {
+                return sendResponse(res, 400, "Contraseña requerida", { authorized: false });
+            }
+            const result = await this.service.authorizeStockProduct(String(password));
+            return sendResponse(res, 200, result.message, result);
+        } catch (error) {
+            console.error("Error in authorizeStockProduct:", error);
+            return sendResponse(res, 500, "Error validating authorization password", error);
         }
     }
 

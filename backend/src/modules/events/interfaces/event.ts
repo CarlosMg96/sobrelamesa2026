@@ -44,7 +44,85 @@ export interface Event {
     agente?: string;
     tipo_evento_nombre?: string;
     categorias?: string;
-    status_sobrevendido?: boolean | number;
     ultimo_comentario?: string;
     filtrado_por?: string;
+}
+
+export interface QuoteProductItem {
+    id?: number;
+    producto_id: number;
+    cantidad: number;
+    precio_producto: number;
+    descuento?: number;
+    dias?: number;
+    row_position?: number;
+    row_status?: 'exists' | 'new' | 'deleted' | 'cancelled';
+    // Joined product info
+    clave?: string;
+    producto?: string;
+    imagen?: string;
+    categoria?: string;
+    stock?: number;
+    disponible?: number;
+    sobrevendido?: boolean;
+    status_authorized?: number | boolean;
+    quantity_authorized?: number;
+    subtotal?: number;
+}
+
+export interface QuoteContentItem {
+    id?: number;
+    evento_id?: number;
+    content_seccion: string;
+    type: number; // 2: nota, 3: sección
+    row_position?: number;
+    row_status?: 'exists' | 'new' | 'deleted';
+}
+
+export interface SaveQuoteDTO {
+    id?: number;
+    fecha_cotizacion: string;
+    cliente_id: number | string;
+    agente_id: number | string;
+    tipo_evento: number;
+    no_personas: number;
+    domicilio_entrega?: string;
+    domicilio_recoleccion?: string;
+    fecha_evento: string;
+    hora_evento?: string;
+    fecha_entrega?: string;
+    hora_entrega?: string;
+    tipo_horario_entrega?: 'ABIERTO' | 'RANGO' | 'ESPECIFICO';
+    hora_entrega_fin?: string;
+    fecha_recoleccion?: string;
+    hora_recoleccion?: string;
+    tipo_horario_recoleccion?: 'ABIERTO' | 'RANGO' | 'ESPECIFICO';
+    hora_recoleccion_fin?: string;
+    tipo_pago: number;
+    descuento?: number;
+    deposito?: number;
+    status_deposito?: number;
+    montaje?: number;
+    lavado_desinfeccion?: string | number;
+    descuento_lavado?: number;
+    tipo_venta?: number;
+    estatus?: number;
+    products?: QuoteProductItem[];
+    contents?: QuoteContentItem[];
+    internal_comment?: string;
+}
+
+export interface EventDetailResponse {
+    event: Event;
+    products: QuoteProductItem[];
+    contents: QuoteContentItem[];
+    comments: any[];
+}
+
+export interface CatalogsResponse {
+    clients: any[];
+    agents: any[];
+    eventTypes: any[];
+    places: any[];
+    paymentTypes: { id: number; name: string }[];
 }

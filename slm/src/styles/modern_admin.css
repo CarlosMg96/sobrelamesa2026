@@ -769,57 +769,138 @@ body,
   cursor: not-allowed !important;
 }
 
-/* Floating Table Style */
+/* ==========================================================================
+   HOMOGENIZED TABLE DESIGN SYSTEM (.slm-table-card, .table-custom)
+   ========================================================================== */
+
+/* 1. Main Table Card Container (Ensures table is cleanly framed, not floating) */
+.slm-table-card {
+  background-color: var(--slm-card-bg) !important;
+  border: var(--slm-card-border) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--slm-card-shadow) !important;
+  overflow: hidden !important;
+  margin-bottom: 1.5rem !important;
+  transition: all 0.25s ease;
+}
+
+[data-theme="dark"] .slm-table-card {
+  background-color: #111827 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* 2. Structured Table Style */
 .table-custom {
   width: 100% !important;
-  border-collapse: separate !important;
-  border-spacing: 0 0.5rem !important;
+  margin-bottom: 0 !important;
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+  --bs-table-bg: transparent !important;
+  --bs-table-color: var(--slm-text-title) !important;
+  background-color: transparent !important;
+}
+
+.table-custom > :not(caption) > * > * {
+  box-shadow: none !important;
+}
+
+/* 3. Solid, Anchored Header Bar (Eliminates floating text) */
+.table-custom thead {
+  background-color: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="dark"] .table-custom thead {
+  background-color: #1e293b !important;
+  border-bottom: 1px solid #334155 !important;
 }
 
 .table-custom thead th {
-  border-bottom: none !important;
-  color: var(--slm-text-subtitle) !important;
+  border: none !important;
+  background-color: transparent !important;
+  color: #475569 !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
-  font-size: 0.75rem !important;
-  padding: 0.85rem 1rem !important;
-  letter-spacing: 0.5px;
+  font-size: 0.72rem !important;
+  padding: 1rem 1rem !important;
+  letter-spacing: 0.6px !important;
+  white-space: nowrap !important;
+  vertical-align: middle !important;
 }
 
+[data-theme="dark"] .table-custom thead th {
+  color: #94a3b8 !important;
+  background-color: transparent !important;
+}
+
+/* 4. Homogeneous Table Rows */
 .table-custom tbody tr {
   background-color: var(--slm-card-bg) !important;
   color: var(--slm-text-title) !important;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-bottom: 1px solid #edf2f7 !important;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.table-custom tbody tr:last-child {
+  border-bottom: none !important;
+}
+
+[data-theme="dark"] .table-custom tbody tr {
+  background-color: #111827 !important;
+  color: #f8fafc !important;
+  border-bottom: 1px solid #1f2937 !important;
+  box-shadow: none !important;
 }
 
 .table-custom tbody tr:hover {
-  box-shadow: var(--slm-card-hover-shadow) !important;
-  transform: translateY(-1px);
+  background-color: #f8fafc !important;
 }
 
+[data-theme="dark"] .table-custom tbody tr:hover {
+  background-color: #1e293b !important;
+}
+
+/* 5. Clean Cell Padding & Typography */
 .table-custom tbody td {
-  padding: 1rem !important;
+  padding: 1rem 1rem !important;
   vertical-align: middle !important;
-  border-top: 1px solid #edf2f7 !important;
-  border-bottom: 1px solid #edf2f7 !important;
-  font-size: 0.9rem;
+  background-color: transparent !important;
+  color: var(--slm-text-title) !important;
+  border: none !important;
+  font-size: 0.88rem !important;
 }
 
-.table-custom tbody tr td:first-child {
-  border-top-left-radius: 10px !important;
-  border-bottom-left-radius: 10px !important;
-  border-left: 1px solid #edf2f7 !important;
+[data-theme="dark"] .table-custom tbody td {
+  background-color: transparent !important;
+  color: #f8fafc !important;
+  border: none !important;
 }
 
-.table-custom tbody tr td:last-child {
-  border-top-right-radius: 10px !important;
-  border-bottom-right-radius: 10px !important;
-  border-right: 1px solid #edf2f7 !important;
+.table-custom tbody tr.selected {
+  background-color: rgba(13, 110, 253, 0.05) !important;
 }
 
 .table-custom tbody tr.selected td:first-child {
-  border-left: 3px solid #0d6efd !important;
+  box-shadow: inset 4px 0 0 #0d6efd !important;
+}
+
+[data-theme="dark"] .table-custom tbody tr.selected {
+  background-color: rgba(13, 110, 253, 0.12) !important;
+}
+
+[data-theme="dark"] .table-custom tbody tr strong,
+[data-theme="dark"] .table-custom tbody tr .fw-bold,
+[data-theme="dark"] .table-custom tbody tr .fw-semibold {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .table-custom tbody tr .text-muted {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .table-custom tbody tr .text-dark {
+  color: #f8fafc !important;
 }
 
 /* Badges & Buttons */
@@ -954,6 +1035,123 @@ body,
   background-color: rgba(13, 110, 253, 0.08) !important;
   color: #0d6efd !important;
   border: 1.5px solid #0d6efd !important;
+}
+
+/* Badges Dark Mode */
+[data-theme="dark"] .badge-cotizado {
+  background-color: #334155 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #475569 !important;
+}
+
+[data-theme="dark"] .badge-confirmado {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  border: 1px solid #1d4ed8 !important;
+}
+
+[data-theme="dark"] .badge-autorizado,
+[data-theme="dark"] .badge-authorized {
+  background-color: #4338ca !important;
+  color: #e0e7ff !important;
+  border: 1px solid #3730a3 !important;
+}
+
+[data-theme="dark"] .badge-disponible {
+  background-color: rgba(16, 185, 129, 0.2) !important;
+  color: #34d399 !important;
+  border: 1px solid rgba(16, 185, 129, 0.4) !important;
+}
+
+[data-theme="dark"] .badge-sobrevendido {
+  background-color: rgba(239, 68, 68, 0.2) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+}
+
+[data-theme="dark"] .badge-paid,
+[data-theme="dark"] .badge-pagado {
+  background-color: rgba(16, 185, 129, 0.2) !important;
+  color: #34d399 !important;
+  border: 1px solid rgba(16, 185, 129, 0.4) !important;
+}
+
+[data-theme="dark"] .badge-abonos {
+  background-color: rgba(245, 158, 11, 0.2) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(245, 158, 11, 0.4) !important;
+}
+
+[data-theme="dark"] .badge-firmado {
+  background-color: #334155 !important;
+  color: #cbd5e1 !important;
+  border: 1px solid #475569 !important;
+}
+
+[data-theme="dark"] .badge-cancelado {
+  background-color: #dc2626 !important;
+  color: #ffffff !important;
+  border: 1px solid #b91c1c !important;
+}
+
+[data-theme="dark"] .badge-completado {
+  background-color: rgba(59, 130, 246, 0.2) !important;
+  color: #60a5fa !important;
+  border: 1px solid rgba(59, 130, 246, 0.4) !important;
+}
+
+[data-theme="dark"] .badge-procesado {
+  background-color: rgba(16, 185, 129, 0.2) !important;
+  color: #34d399 !important;
+  border: 1px solid rgba(16, 185, 129, 0.4) !important;
+}
+
+[data-theme="dark"] .badge-warning {
+  background-color: #78350f !important;
+  color: #fde68a !important;
+  border: 1px solid #92400e !important;
+}
+
+[data-theme="dark"] .badge-success {
+  background-color: #065f46 !important;
+  color: #a7f3d0 !important;
+  border: 1px solid #047857 !important;
+}
+
+[data-theme="dark"] .badge-outline-danger {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+  color: #f87171 !important;
+  border: 1.5px solid #ef4444 !important;
+}
+
+[data-theme="dark"] .badge-outline-success {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  color: #34d399 !important;
+  border: 1.5px solid #10b981 !important;
+}
+
+[data-theme="dark"] .badge-outline-info {
+  background-color: rgba(6, 182, 212, 0.15) !important;
+  color: #38bdf8 !important;
+  border: 1.5px solid #06b6d4 !important;
+}
+
+[data-theme="dark"] .badge-outline-warning {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  color: #fbbf24 !important;
+  border: 1.5px solid #f59e0b !important;
+}
+
+[data-theme="dark"] .badge-outline-secondary {
+  background-color: rgba(100, 116, 139, 0.18) !important;
+  color: #cbd5e1 !important;
+  border: 1.5px solid #64748b !important;
+}
+
+[data-theme="dark"] .badge-outline-primary {
+  background-color: rgba(59, 130, 246, 0.18) !important;
+  color: #60a5fa !important;
+  border: 1.5px solid #3b82f6 !important;
 }
 
 /* Table controls & filter pills */
@@ -1755,11 +1953,22 @@ body,
   background-color: #e5f1ff;
 }
 
+[data-theme="dark"] .date-picker-wrapper:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  background-color: #334155;
+}
+
 .table-calendar {
   width: 100% !important;
   margin-bottom: 0 !important;
   border-collapse: separate;
   border-spacing: 0;
+  --bs-table-bg: transparent !important;
+  --bs-table-color: var(--slm-text-title) !important;
+}
+
+.table-calendar > :not(caption) > * > * {
+  box-shadow: none !important;
 }
 
 .table-calendar th {
@@ -1786,9 +1995,12 @@ body,
   font-size: 0.875rem;
   border-bottom: 1px solid #edf2f7;
   color: var(--slm-text-title, #1e293b);
+  background-color: var(--slm-card-bg);
 }
 
 [data-theme="dark"] .table-calendar td {
+  background-color: #111827;
+  color: #f8fafc;
   border-color: #334155;
 }
 
@@ -1881,5 +2093,98 @@ body,
   color: #fff;
   transform: scale(1.05);
 }
+
+/* ==========================================================================
+   GLOBAL DARK MODE SYSTEM OVERRIDES
+   ========================================================================== */
+
+[data-theme="dark"] .card {
+  background-color: var(--slm-card-bg) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: var(--slm-text-title) !important;
+}
+
+[data-theme="dark"] .card-header,
+[data-theme="dark"] .card-footer {
+  background-color: transparent !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: var(--slm-text-title) !important;
+}
+
+[data-theme="dark"] .modal-content {
+  background-color: #1e293b !important;
+  border: 1px solid #334155 !important;
+  color: #f8fafc !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
+}
+
+[data-theme="dark"] .modal-header,
+[data-theme="dark"] .modal-footer {
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .modal-body {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+[data-theme="dark"] .bg-light {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .text-dark {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] hr {
+  border-color: #334155 !important;
+  opacity: 0.35;
+}
+
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus {
+  background-color: #1e293b !important;
+  border-color: #0d6efd !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .input-group-text {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .dropdown-menu {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+}
+
+[data-theme="dark"] .dropdown-item {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .dropdown-item:hover {
+  background-color: rgba(13, 110, 253, 0.15) !important;
+  color: #60a5fa !important;
+}
+
+[data-theme="dark"] .dropdown-divider {
+  border-top-color: #334155 !important;
+}
+
 
 

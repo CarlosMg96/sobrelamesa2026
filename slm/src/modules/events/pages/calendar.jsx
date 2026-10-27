@@ -591,7 +591,7 @@ export default function CalendarPage() {
             <select
               value={dateFieldFilter}
               onChange={(e) => setDateFieldFilter(e.target.value)}
-              className="form-select rounded-pill border-0 bg-light px-3 py-2"
+              className="form-select slm-pill-select"
             >
               <option value="event_date">Fecha del Evento</option>
               <option value="start_date">Fecha de Inicio</option>
@@ -650,7 +650,7 @@ export default function CalendarPage() {
 
       {/* Vista Detallada Card */}
       <div className="card card-dashboard">
-        <div className="card-header bg-white border-0 pt-4 pb-0">
+        <div className="card-header bg-transparent border-0 pt-4 pb-0">
           <h4 className="card-title fw-bold">Vista Detallada</h4>
         </div>
         <div className="card-body">

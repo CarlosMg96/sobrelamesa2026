@@ -94,9 +94,13 @@ Avance Global: [█████░░░░░░░░░░░░░░░] 25
 - [ ] Selector rápido de lugares dentro de la creación de eventos.
 
 ### 09. Cotizaciones & Eventos (Core del Negocio)
-- [x] Endpoints iniciales de eventos en `/api/events`.
-- [ ] Creación de cotización completa con cálculo automático de totales, IVA, fletes y descuentos.
-- [ ] Módulo de partidas/ítems de evento (`DetalleEvento`).
+- [x] Endpoints completos de eventos y cotizaciones en `/api/events` (`catalogs`, `event/:id`, `save-quote`, `add-comment`).
+- [x] Editor completo de cotización (`/events/new`, `/events/edit/:id`) idéntico a la vista legacy:
+  - [x] Búsqueda predictiva `SearchableSelect` para clientes (+5,600 registros), agentes, tipos de evento y domicilios.
+  - [x] Catálogo F2 con búsqueda paginada y disponibilidad en tiempo real por rango de fechas.
+  - [x] Notificaciones Toast (`top-end`) y confirmaciones SweetAlert2 (eliminando alertas inline y `alert()` nativos).
+  - [x] Cálculo reactivo de totales, descuentos, lavado/desinfección y enlace público con token hash.
+  - [x] Asignación automática del agente logueado en cotizaciones nuevas.
 - [ ] Transición de estados de evento (Cotización ➡️ Confirmado ➡️ En Almacén ➡️ Finalizado).
 - [ ] Generación de PDF de cotización imprimible para el cliente.
 

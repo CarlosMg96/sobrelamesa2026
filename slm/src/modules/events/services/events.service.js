@@ -39,3 +39,43 @@ export const addCommentService = async (commentData) => {
         throw error;
     }
 };
+
+export const getCatalogsService = async () => {
+    try {
+        const { data } = await axiosClientApi.doGet('/events/v1/catalogs');
+        return data;
+    } catch (error) {
+        console.error('Error en getCatalogsService:', error);
+        throw error;
+    }
+};
+
+export const getEventDetailService = async (id) => {
+    try {
+        const { data } = await axiosClientApi.doGet(`/events/v1/event/${id}?full=true`);
+        return data;
+    } catch (error) {
+        console.error('Error en getEventDetailService:', error);
+        throw error;
+    }
+};
+
+export const saveQuoteService = async (payload) => {
+    try {
+        const { data } = await axiosClientApi.doPost('/events/v1/save-quote', payload);
+        return data;
+    } catch (error) {
+        console.error('Error en saveQuoteService:', error);
+        throw error;
+    }
+};
+
+export const authorizeStockProductService = async (password) => {
+    try {
+        const { data } = await axiosClientApi.doPost('/events/v1/authorize-stock-product', { password });
+        return data;
+    } catch (error) {
+        console.error('Error en authorizeStockProductService:', error);
+        throw error;
+    }
+};

@@ -18,7 +18,10 @@ router.get("/v1/list", authMiddleware, authorize([Role.MASTER, Role.ADMIN, Role.
 router.get("/v1/calendar", authMiddleware, authorize([Role.MASTER, Role.ADMIN, Role.SALES, Role.WAREHOUSE, Role.STAFF]), (req, res) => eventController.getCalendarEvents(req, res));
 router.post("/v1/comment", authMiddleware, authorize([Role.MASTER, Role.ADMIN, Role.SALES, Role.WAREHOUSE, Role.STAFF]), (req, res) => eventController.addComment(req, res));
 router.get("/v1/solvers", authMiddleware, authorize([Role.MASTER, Role.ADMIN, Role.SALES, Role.WAREHOUSE, Role.STAFF]), (req, res) => eventController.getSolvers(req, res));
+router.get("/v1/catalogs", authMiddleware, authorize([Role.MASTER, Role.ADMIN, Role.SALES, Role.WAREHOUSE, Role.STAFF]), (req, res) => eventController.getCatalogs(req, res));
 router.get("/v1/event/:id", authMiddleware, authorize([Role.MASTER, Role.ADMIN, Role.SALES, Role.WAREHOUSE, Role.STAFF]), (req, res) => eventController.getEventById(req, res));
+router.post("/v1/save-quote", authMiddleware, authorize([Role.MASTER, Role.ADMIN, Role.SALES, Role.WAREHOUSE, Role.STAFF]), (req, res) => eventController.saveQuote(req, res));
+router.post("/v1/authorize-stock-product", authMiddleware, authorize([Role.MASTER, Role.ADMIN, Role.SALES, Role.WAREHOUSE, Role.STAFF]), (req, res) => eventController.authorizeStockProduct(req, res));
 router.post("/v1/event", authMiddleware, authorize([Role.MASTER, Role.ADMIN, Role.SALES, Role.WAREHOUSE, Role.STAFF]), (req, res) => eventController.createEvent(req, res));
 router.delete("/v1/event/:id", authMiddleware, authorize([Role.MASTER, Role.ADMIN, Role.SALES, Role.WAREHOUSE, Role.STAFF]), (req, res) => eventController.deleteEvent(req, res));
 
