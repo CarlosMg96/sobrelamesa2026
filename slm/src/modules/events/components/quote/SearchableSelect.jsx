@@ -51,11 +51,10 @@ export default function SearchableSelect({
             <div className="position-relative flex-grow-1">
                 {/* Selector Box */}
                 <div
-                    className={`form-control d-flex justify-content-between align-items-center bg-white cursor-pointer ${disabled ? 'disabled bg-light' : ''}`}
+                    className={`form-control d-flex justify-content-between align-items-center slm-select-trigger ${disabled ? 'disabled' : ''}`}
                     style={{
                         minHeight: '38px',
                         borderRadius: '8px',
-                        borderColor: '#e2e8f0',
                         fontSize: '0.875rem'
                     }}
                     onClick={() => !disabled && setIsOpen(!isOpen)}
@@ -69,18 +68,17 @@ export default function SearchableSelect({
                 {/* Dropdown Menu con Input de Búsqueda */}
                 {isOpen && (
                     <div
-                        className="position-absolute start-0 end-0 mt-1 bg-white border rounded-3 shadow-lg z-3"
+                        className="position-absolute start-0 end-0 mt-1 rounded-3 z-3 slm-select-dropdown"
                         style={{
                             maxHeight: '280px',
                             overflowY: 'hidden',
-                            zIndex: 1050,
-                            borderColor: '#cbd5e1'
+                            zIndex: 1050
                         }}
                     >
                         {/* Buscador interno */}
-                        <div className="p-2 border-bottom bg-light">
+                        <div className="p-2 slm-select-search-wrap">
                             <div className="input-group input-group-sm">
-                                <span className="input-group-text bg-white border-end-0">
+                                <span className="input-group-text border-end-0 slm-select-search-addon">
                                     <i className="bi bi-search text-muted"></i>
                                 </span>
                                 <input
@@ -95,7 +93,7 @@ export default function SearchableSelect({
                                 {searchTerm && (
                                     <button
                                         type="button"
-                                        className="btn btn-outline-secondary border-start-0"
+                                        className="btn btn-outline-secondary border-start-0 slm-select-search-addon"
                                         onClick={() => setSearchTerm('')}
                                     >
                                         <i className="bi bi-x"></i>
@@ -111,28 +109,30 @@ export default function SearchableSelect({
                                     No se encontraron resultados
                                 </div>
                             ) : (
-                                filteredOptions.map((opt) => (
-                                    <div
-                                        key={opt.value}
-                                        className={`px-3 py-2 cursor-pointer border-bottom last:border-0 small d-flex flex-column ${
-                                            String(opt.value) === String(value) ? 'bg-primary-subtle text-primary fw-bold' : 'hover-bg-light'
-                                        }`}
-                                        style={{ cursor: 'pointer' }}
-                                        onClick={() => handleSelect(opt.value)}
-                                    >
-                                        <div className="d-flex justify-content-between align-items-center">
-                                            <span>{opt.label}</span>
-                                            {String(opt.value) === String(value) && (
-                                                <i className="bi bi-check-lg text-primary"></i>
+                                filteredOptions.map((opt) => {
+                                    const isSelected = String(opt.value) === String(value);
+                                    return (
+                                        <div
+                                            key={opt.value}
+                                            className={`px-3 py-2 small d-flex flex-column slm-select-option ${
+                                                isSelected ? 'is-selected' : ''
+                                            }`}
+                                            onClick={() => handleSelect(opt.value)}
+                                        >
+                                            <div className="d-flex justify-content-between align-items-center">
+                                                <span>{opt.label}</span>
+                                                {isSelected && (
+                                                    <i className="bi bi-check-lg text-primary"></i>
+                                                )}
+                                            </div>
+                                            {opt.secondaryLabel && (
+                                                <span className="slm-select-option-secondary">
+                                                    {opt.secondaryLabel}
+                                                </span>
                                             )}
                                         </div>
-                                        {opt.secondaryLabel && (
-                                            <span className="text-muted" style={{ fontSize: '0.75rem' }}>
-                                                {opt.secondaryLabel}
-                                            </span>
-                                        )}
-                                    </div>
-                                ))
+                                    );
+                                })
                             )}
                         </div>
                     </div>

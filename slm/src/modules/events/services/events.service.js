@@ -79,3 +79,33 @@ export const authorizeStockProductService = async (password) => {
         throw error;
     }
 };
+
+export const createQuickClientService = async (payload) => {
+    try {
+        const { data } = await axiosClientApi.doPost('/events/v1/client', payload);
+        return data;
+    } catch (error) {
+        console.error('Error en createQuickClientService:', error);
+        throw error;
+    }
+};
+
+export const createQuickCompanyService = async (payload) => {
+    try {
+        const { data } = await axiosClientApi.doPost('/events/v1/company', payload);
+        return data;
+    } catch (error) {
+        console.error('Error en createQuickCompanyService:', error);
+        throw error;
+    }
+};
+
+export const createQuickPlaceService = async (payload) => {
+    try {
+        const { data } = await axiosClientApi.doPost('/events/v1/place', payload);
+        return data;
+    } catch (error) {
+        console.error('Error en createQuickPlaceService:', error);
+        throw error;
+    }
+};
