@@ -78,16 +78,23 @@ export default function QuoteEditor() {
         }
     }, [user, isEdit]);
 
-    // 1. Cargar Catálogos
+    // 1. Cargar Catálogos y Detalle del Evento en paralelo
     useEffect(() => {
         const fetchInitData = async () => {
             setLoading(true);
-            try {
-                const catRes = await getCatalogsService();
-                if (catRes?.data) {
-                    setCatalogs(catRes.data);
-                }
 
+            // Cargar catálogos en paralelo sin bloquear el detalle de la cotización
+            getCatalogsService()
+                .then((catRes) => {
+                    if (catRes?.data) {
+                        setCatalogs(catRes.data);
+                    }
+                })
+                .catch((err) => {
+                    console.error('Error cargando catálogos:', err);
+                });
+
+            try {
                 if (isEdit) {
                     const detailRes = await getEventDetailService(id);
                     if (detailRes?.data) {
@@ -101,8 +108,13 @@ export default function QuoteEditor() {
                             fecha_cotizacion: cleanDate(event.fecha_cotizacion) || new Date().toISOString().split('T')[0],
                             cliente_id: event.cliente_id || '',
                             cliente_nombre: event.cliente || '',
+                            num_tel: event.num_tel || '',
+                            email: event.email || '',
+                            empresa: event.empresa || '',
                             agente_id: event.agente_id || '',
+                            agente: event.agente || '',
                             tipo_evento: event.tipo_evento || '',
+                            tipo_evento_nombre: event.tipo_evento_nombre || '',
                             no_personas: event.no_personas || '',
                             fecha_evento: cleanDate(event.fecha_evento),
                             hora_evento: cleanTime(event.hora_evento, '14:00'),
@@ -124,13 +136,16 @@ export default function QuoteEditor() {
                             descuento_lavado: event.descuento_lavado || 0,
                             tipo_venta: event.tipo_venta || 1,
                             estatus: Number(event.estatus) || 1,
-                            url_seguimiento: event.url_seguimiento || ''
+                            url_seguimiento: event.url_seguimiento || '',
+                            firma: event.firma || '',
+                            firma_logistica: event.firma_logistica || ''
                         });
 
                         // Unificar products y contents ordenados por row_position
                         const unifiedItems = [
                             ...products.map(p => ({
                                 ...p,
+                                _uid: `prod-${p.id || Math.random()}`,
                                 type: 'product',
                                 row_status: 'exists',
                                 status_authorized: Number(p.status_authorized) === 1 ? 1 : 0,
@@ -138,6 +153,7 @@ export default function QuoteEditor() {
                             })),
                             ...contents.map(c => ({
                                 ...c,
+                                _uid: `cont-${c.id || Math.random()}`,
                                 type: c.type === 3 ? 'section' : 'note',
                                 row_status: 'exists'
                             }))
@@ -195,12 +211,14 @@ export default function QuoteEditor() {
     // Agregar producto desde el modal F2
     const handleAddProductFromModal = (productToAdd) => {
         const nextPos = items.length;
-        const sub = (Number(productToAdd.cantidad) * Number(productToAdd.precio_renta) * 1);
+        const qty = productToAdd.cantidad !== undefined ? Number(productToAdd.cantidad) : 0;
+        const sub = (qty * Number(productToAdd.precio_renta) * 1);
 
         const newItem = {
+            _uid: `new-prod-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
             id: undefined,
             producto_id: productToAdd.id,
-            cantidad: Number(productToAdd.cantidad) || 1,
+            cantidad: qty,
             precio_producto: Number(productToAdd.precio_renta) || 0,
             descuento: 0,
             dias: 1,
@@ -209,8 +227,12 @@ export default function QuoteEditor() {
             type: 'product',
             clave: productToAdd.clave,
             producto: productToAdd.producto,
+            medidas: productToAdd.medidas || '',
+            precio_reposicion: Number(productToAdd.precio_reposicion) || 0,
             imagen: productToAdd.imagen,
             categoria: productToAdd.categoria,
+            categoria_producto_id: Number(productToAdd.categoria_producto_id) || 0,
+            subcategoria_id: Number(productToAdd.subcategoria_id) || 0,
             stock: productToAdd.stock,
             available: productToAdd.available,
             status_authorized: 0,
@@ -227,14 +249,23 @@ export default function QuoteEditor() {
         const text = (commentToAdd || newComment || '').trim();
         if (!text) return;
 
-        if (isEdit && id) {
+        const targetEventId = Number(id || formState.id || 0);
+
+        if (targetEventId > 0) {
             try {
-                await addCommentService({
-                    eventoId: Number(id),
-                    comment: text
+                const res = await addCommentService({
+                    evento_id: targetEventId,
+                    comentario: text,
+                    user_name: user?.name || user?.username || 'Usuario'
                 });
+                const savedComment = res?.data;
                 setComments(prev => [
-                    { id: Date.now(), comentario: text, user_name: user?.name || 'Yo', created_at: new Date() },
+                    {
+                        id: savedComment?.id || Date.now(),
+                        comentario: text,
+                        user_name: savedComment?.user_name || user?.name || 'Yo',
+                        created_at: savedComment?.created_at || new Date()
+                    },
                     ...prev
                 ]);
                 setNewComment('');
@@ -246,7 +277,13 @@ export default function QuoteEditor() {
         } else {
             // En creación se enviará junto al save
             setComments(prev => [
-                { id: Date.now(), comentario: text, user_name: user?.name || 'Yo', created_at: new Date() },
+                {
+                    id: Date.now(),
+                    comentario: text,
+                    user_name: user?.name || 'Yo',
+                    created_at: new Date(),
+                    isLocal: true
+                },
                 ...prev
             ]);
             setNewComment('');
@@ -277,12 +314,14 @@ export default function QuoteEditor() {
         setSaving(true);
 
         try {
-            // Separar productos y contents con su posición asignada
+            // Separar productos y contents con su posición asignada según el orden visual actual
             const productsPayload = [];
             const contentsPayload = [];
+            let activePos = 0;
 
-            items.forEach((item, index) => {
-                const pos = item.row_position !== undefined ? item.row_position : index;
+            items.forEach((item) => {
+                const isDeleted = item.row_status === 'deleted' || item.row_status === 'cancelled';
+                const pos = isDeleted ? (item.row_position ?? 0) : activePos++;
 
                 if (item.type === 'section' || item.type === 3) {
                     contentsPayload.push({
@@ -301,7 +340,7 @@ export default function QuoteEditor() {
                         row_status: item.row_status
                     });
                 } else {
-                    const qty = Number(item.cantidad) || 1;
+                    const qty = Number(item.cantidad) || 0;
                     const isAuth = Number(item.status_authorized) === 1 && Number(item.quantity_authorized ?? qty) === qty ? 1 : 0;
                     productsPayload.push({
                         id: item.id,
@@ -349,6 +388,7 @@ export default function QuoteEditor() {
                 estatus: statusToSave,
                 products: productsPayload,
                 contents: contentsPayload,
+                comments: comments.filter(c => c.isLocal).map(c => c.comentario),
                 internal_comment: newComment.trim() || undefined
             };
 
@@ -359,6 +399,8 @@ export default function QuoteEditor() {
                 const trackingUrl = result.data.url_seguimiento;
 
                 showToast(result.message || (isEdit ? 'Cotización actualizada con éxito' : 'Cotización creada con éxito'), 'success');
+
+                setComments(prev => prev.map(c => ({ ...c, isLocal: false })));
 
                 setFormState(prev => ({
                     ...prev,
@@ -444,6 +486,7 @@ export default function QuoteEditor() {
                 formState={formState}
                 setFormState={setFormState}
                 catalogs={catalogs}
+                setCatalogs={setCatalogs}
                 onDateChange={(field, val) => {
                     if (field === 'fecha_entrega') {
                         checkStockAvailability(items, val, formState.fecha_recoleccion);
@@ -469,6 +512,7 @@ export default function QuoteEditor() {
             <FinancialSummaryCard
                 formState={formState}
                 items={items}
+                catalogs={catalogs}
                 urlSeguimiento={formState.url_seguimiento}
             />
 
@@ -480,30 +524,30 @@ export default function QuoteEditor() {
                 startDate={formState.fecha_entrega || formState.fecha_evento}
                 endDate={formState.fecha_recoleccion || formState.fecha_evento}
                 eventId={formState.id}
+                items={items}
             />
 
             {/* Sticky Action Footer idéntico al screenshot */}
             <div
-                className="position-fixed bottom-0 start-0 end-0 bg-white border-top py-2 px-4 shadow d-flex justify-content-between align-items-center"
+                className="position-fixed bottom-0 start-0 end-0 py-2 px-4 d-flex justify-content-between align-items-center slm-sticky-footer"
                 style={{ zIndex: 1020, minHeight: '60px' }}
             >
                 <div className="d-flex align-items-center gap-4">
-                    <div className="d-flex align-items-center gap-2 text-secondary fw-medium">
+                    <div className="d-flex align-items-center gap-2 fw-medium slm-sticky-footer-meta">
                         <i className="bi bi-card-checklist"></i>
-                        <span>Items: <strong>{activeProducts.length}</strong></span>
+                        <span>Items: <strong className="slm-sticky-footer-total">{activeProducts.length}</strong></span>
                     </div>
 
-                    <div className="d-flex align-items-center gap-2 text-secondary fw-medium">
+                    <div className="d-flex align-items-center gap-2 fw-medium slm-sticky-footer-meta">
                         <i className="bi bi-wallet2"></i>
-                        <span>Total Acumulado: <strong className="text-dark fs-6">${accumulatedTotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+                        <span>Total Acumulado: <strong className="fs-6 slm-sticky-footer-total">${accumulatedTotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
                     </div>
                 </div>
 
                 <div className="d-flex align-items-center gap-2">
                     <button
                         type="button"
-                        className="btn btn-outline-dark rounded-pill px-4 fw-semibold d-flex align-items-center gap-1 bg-white"
-                        style={{ borderColor: '#cbd5e1' }}
+                        className="btn rounded-pill px-4 fw-semibold d-flex align-items-center gap-1 slm-btn-confirm"
                         onClick={handleConfirmQuote}
                         disabled={saving}
                     >
