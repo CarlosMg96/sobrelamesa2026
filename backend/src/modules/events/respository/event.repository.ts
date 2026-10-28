@@ -1,4 +1,4 @@
-import { Event } from "../interfaces/event";
+import { Event, EventDetailResponse, CatalogsResponse, SaveQuoteDTO, CreateQuickClientDTO, CreateQuickCompanyDTO, CreateQuickPlaceDTO } from "../interfaces/event";
 
 export interface EventQueryParams {
     pageNumber?: number;
@@ -20,6 +20,13 @@ export interface EventRepository {
     getCalendarEvents(startDate: string, endDate: string, filterByDate?: string): Promise<Event[]>;
     addComment(eventoId: number, comment: string, userId: number, userName: string): Promise<any>;
     getEvent(event_id: Number): Promise<Event | null>;
+    getEventDetail(event_id: number): Promise<EventDetailResponse | null>;
+    getCatalogs(): Promise<CatalogsResponse>;
+    createQuickClient(dto: CreateQuickClientDTO): Promise<any>;
+    createQuickCompany(dto: CreateQuickCompanyDTO): Promise<any>;
+    createQuickPlace(dto: CreateQuickPlaceDTO): Promise<any>;
+    saveOrUpdateQuote(dto: SaveQuoteDTO, userId?: number, userName?: string): Promise<{ id: number; message: string; url_seguimiento?: string }>;
+    authorizeStockProduct(password: string): Promise<{ authorized: boolean; message: string }>;
     getSolvers(): Promise<{ id: number; name: string }[]>;
     createEvent(data: Array<Event>): Promise<Event | null>;
     updateEvent(data: Array<Event>): Promise<Event | null>;

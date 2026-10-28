@@ -7,13 +7,47 @@ export class ProductController {
     constructor(private readonly service: ProductService) { }
 
     async getListProducts(req: Request, res: Response) {
-        let { pageNumber, pageLength } = req.query;
+        let { pageNumber, pageLength, search, categoryId } = req.query;
         if (!pageNumber || !pageLength) {
             pageNumber = "1";
             pageLength = "10";
         }
-        const result = await this.service.getListProducts(Number(pageNumber), Number(pageLength));
+        const result = await this.service.getListProducts(
+            Number(pageNumber),
+            Number(pageLength),
+            search ? String(search) : undefined,
+            categoryId ? Number(categoryId) : undefined
+        );
         return sendResponse(res, 200, "Products list", result);
+    }
+
+    async getCategories(req: Request, res: Response) {
+        try {
+            const categories = await this.service.getCategories();
+            return sendResponse(res, 200, "Product categories", categories);
+        } catch (error) {
+            console.error("Error in getCategories", error);
+            return sendResponse(res, 500, "Error getting categories", error);
+        }
+    }
+
+    async checkAvailability(req: Request, res: Response) {
+        try {
+            const { productIds, startDate, endDate, eventId } = req.body;
+            if (!Array.isArray(productIds) || productIds.length === 0 || !startDate || !endDate) {
+                return sendResponse(res, 400, "Missing required parameters: productIds, startDate, endDate");
+            }
+            const availability = await this.service.checkStockAvailability(
+                productIds.map(Number),
+                String(startDate),
+                String(endDate),
+                eventId ? Number(eventId) : undefined
+            );
+            return sendResponse(res, 200, "Product availability", availability);
+        } catch (error) {
+            console.error("Error in checkAvailability", error);
+            return sendResponse(res, 500, "Error checking availability", error);
+        }
     }
 
     async getProductById(req: Request, res: Response) {

@@ -56,6 +56,9 @@ importers:
       react-scripts:
         specifier: 5.0.1
         version: 5.0.1(@babel/plugin-syntax-flow@7.29.7(@babel/core@7.29.7))(@babel/plugin-transform-react-jsx@7.29.7(@babel/core@7.29.7))(@types/babel__core@7.20.5)(eslint@8.57.1)(react@19.3.1)(type-fest@0.21.3)(typescript@4.9.5)
+      sweetalert2:
+        specifier: ^11.26.25
+        version: 11.26.25
       web-vitals:
         specifier: ^5.1.0
         version: 5.3.0
@@ -5191,6 +5194,9 @@ packages:
     resolution: {integrity: sha512-2GJ4h3rl13qYTdwllaK6QlL8tG+UrM8626V2Ylcd/yBUv2Y/EwLsYisVV6UDCRmlk+C74G8nMpxJCk0RWPdDCw==}
     engines: {node: '>=10.13.0'}
     hasBin: true
+
+  sweetalert2@11.26.25:
+    resolution: {integrity: sha512-+hunCOJdJ6FLj04T9YSLvvZXRjsvIkTeTKP2e4VF8CaBias961BTnWiSFAy7F/CM5eq3QK2Rraoc5Gzftslvkg==}
 
   symbol-tree@3.2.4:
     resolution: {integrity: sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw==}
@@ -11884,6 +11890,8 @@ snapshots:
       picocolors: 1.1.1
       sax: 1.6.1
       stable: 0.1.8
+
+  sweetalert2@11.26.25: {}
 
   symbol-tree@3.2.4: {}
 

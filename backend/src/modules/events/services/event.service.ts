@@ -1,5 +1,5 @@
 import { EventRepository, EventQueryParams } from "../respository/event.repository";
-import { Event } from "../interfaces/event";
+import { Event, EventDetailResponse, CatalogsResponse, SaveQuoteDTO, CreateQuickClientDTO, CreateQuickCompanyDTO, CreateQuickPlaceDTO } from "../interfaces/event";
 
 export class EventService {
     constructor(private readonly repo: EventRepository) { }
@@ -50,11 +50,39 @@ export class EventService {
         return result;
     }
 
+    async getEventDetail(id: number): Promise<EventDetailResponse | null> {
+        return await this.repo.getEventDetail(id);
+    }
+
+    async getCatalogs(): Promise<CatalogsResponse> {
+        return await this.repo.getCatalogs();
+    }
+
+    async createQuickClient(dto: CreateQuickClientDTO): Promise<any> {
+        return await this.repo.createQuickClient(dto);
+    }
+
+    async createQuickCompany(dto: CreateQuickCompanyDTO): Promise<any> {
+        return await this.repo.createQuickCompany(dto);
+    }
+
+    async createQuickPlace(dto: CreateQuickPlaceDTO): Promise<any> {
+        return await this.repo.createQuickPlace(dto);
+    }
+
+    async saveOrUpdateQuote(dto: SaveQuoteDTO, userId?: number, userName?: string): Promise<{ id: number; message: string; url_seguimiento?: string }> {
+        return await this.repo.saveOrUpdateQuote(dto, userId, userName);
+    }
+
     async getCalendarEvents(startDate: string, endDate: string, filterByDate?: string): Promise<Event[]> {
         return await this.repo.getCalendarEvents(startDate, endDate, filterByDate);
     }
 
     async addComment(eventoId: number, comment: string, userId: number, userName: string): Promise<any> {
         return await this.repo.addComment(eventoId, comment, userId, userName);
+    }
+
+    async authorizeStockProduct(password: string): Promise<{ authorized: boolean; message: string }> {
+        return await this.repo.authorizeStockProduct(password);
     }
 }

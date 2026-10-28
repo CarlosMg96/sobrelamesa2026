@@ -14,6 +14,11 @@ export const ThemeProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('theme', mode);
     document.documentElement.setAttribute('data-theme', mode);
+    document.documentElement.setAttribute('data-bs-theme', mode);
+    if (document.body) {
+      document.body.setAttribute('data-theme', mode);
+      document.body.setAttribute('data-bs-theme', mode);
+    }
   }, [mode]);
 
   const toggleColorMode = () => {

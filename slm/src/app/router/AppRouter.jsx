@@ -9,6 +9,7 @@ import PrivateLayout from '../../layouts/PrivateLayout';
 import ListEvents from '../../modules/events/pages/listEvents';
 import CalendarPage from '../../modules/events/pages/calendar';
 import Quote from '../../modules/events/pages/quote';
+import QuoteEditor from '../../modules/events/pages/QuoteEditor';
 import ListProducts from '../../modules/products/pages/listProducts';
 
 function PublicRoute({ children }) {
@@ -39,6 +40,8 @@ export function AppRouter() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/events" element={<ListEvents />} />
+        <Route path="/events/new" element={<QuoteEditor />} />
+        <Route path="/events/edit/:id" element={<QuoteEditor />} />
         <Route path="/products" element={<ListProducts />} />
       </Route>
     </Routes>

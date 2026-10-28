@@ -1,28 +1,22 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useCallback } from 'react'
 import { useAuth } from '../../auth/hooks/useAuth'
-import { ToastContainer } from '../components/ToastContainer'
+import { showToast, isAlertVisible } from '../../../shared/utils/alerts'
 
 const NotificationsContext = createContext(null)
 
 export function NotificationsProvider({ children }) {
     const { user } = useAuth()
-    const [toasts, setToasts] = useState([])
 
-    const notify = (message) => {
-        if (!user) return
-
-        const id = crypto.randomUUID()
-        setToasts(prev => [...prev, { id, message }])
-
-        setTimeout(() => {
-            setToasts(prev => prev.filter(t => t.id !== id))
-        }, 4000)
-    }
+    const notify = useCallback((message, icon = 'warning') => {
+        if (!user || !message) return
+        // Evitar duplicar o sobrescribir alertas/toasts de SweetAlert2 ya disparados por el componente
+        if (isAlertVisible()) return
+        showToast(message, icon)
+    }, [user])
 
     return (
         <NotificationsContext.Provider value={{ notify }}>
             {children}
-            <ToastContainer toasts={toasts} />
         </NotificationsContext.Provider>
     )
 }
