@@ -1,15 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { showToast } from '../../../../shared/utils/alerts';
+import {
+    resolveEventPdfData,
+    getEventPdfUrl
+} from '../../utils/quotePdfTemplate';
+
+const PDF_LABELS = {
+    'con-iva': 'PDF con IVA',
+    'sin-iva': 'PDF sin IVA',
+    'remision': 'PDF Remisión',
+    'logistica': 'PDF Orden Logística'
+};
 
 export default function FinancialSummaryCard({
     formState,
     items,
+    catalogs = {},
     urlSeguimiento
 }) {
     const [copiedQuoteLink, setCopiedQuoteLink] = useState(false);
     const [copiedLogisticsLink, setCopiedLogisticsLink] = useState(false);
     const [copiedMessage, setCopiedMessage] = useState(false);
-    const [pdfViewMode, setPdfViewMode] = useState('con-iva'); // 'con-iva' | 'sin-iva' | 'logistica'
+
+    // Estado del visor de PDF (idéntico al flujo de summary_form.blade.php en legacy)
+    const [pdfViewMode, setPdfViewMode] = useState('con-iva'); // 'con-iva' | 'sin-iva' | 'remision' | 'logistica'
+    const [pdfLoading, setPdfLoading] = useState(false);
+    const [pdfIframeUrl, setPdfIframeUrl] = useState('');
+
+    // Cargar automáticamente el PDF con IVA cuando se abre una cotización guardada
+    useEffect(() => {
+        if (formState.id && Number(formState.id) > 0) {
+            setPdfLoading(true);
+            setPdfViewMode('con-iva');
+            setPdfIframeUrl(getEventPdfUrl(formState.id, 'con-iva', Date.now()));
+        } else {
+            setPdfIframeUrl('');
+            setPdfLoading(false);
+        }
+    }, [formState.id]);
 
     const activeProducts = items.filter(it => (it.type === 'product' || !it.type) && it.row_status !== 'deleted');
 
@@ -32,12 +60,17 @@ export default function FinancialSummaryCard({
     // Total de venta
     const grandTotal = costQuotationNet + washNet;
 
+    // Datos resueltos para mensaje de WhatsApp
+    const pdfData = resolveEventPdfData({ formState, items, catalogs });
+
     // Enlaces de cotización y logística
     const quoteUrl = urlSeguimiento || (formState.id ? `https://sobre-la-mesa.com/cotizacion/${btoa(String(formState.id))}` : 'https://sobre-la-mesa.com');
-    const logisticsUrl = formState.id ? `https://sobre-la-mesa.com/orden_logistica/${btoa(String(formState.id))}` : 'https://sobre-la-mesa.com';
+    const logisticsUrl = urlSeguimiento
+        ? urlSeguimiento.replace('/cotizacion/', '/orden_logistica/')
+        : (formState.id ? `https://sobre-la-mesa.com/orden_logistica/${btoa(String(formState.id))}` : 'https://sobre-la-mesa.com');
 
     // Mensaje de WhatsApp
-    const clientName = formState.cliente_nombre || 'Estimado cliente';
+    const clientName = pdfData.fullName || formState.cliente_nombre || 'Estimado cliente';
     const folioStr = formState.id ? `#${String(formState.id).padStart(6, '0')}` : '#Nueva';
     const whatsappMessage = `Buen día ${clientName}, anexamos la cotización con ${folioStr} mediante la URL: ${quoteUrl} en conjunto de las políticas https://sobre-la-mesa.com/web_politicas para su revisión y aprobación. Saludos`;
 
@@ -63,6 +96,19 @@ export default function FinancialSummaryCard({
         window.open(url, '_blank');
     };
 
+    // Cambia el PDF mostrado en la Vista Previa del PDF (columna derecha)
+    const previewPDF = (mode) => {
+        if (!formState.id || Number(formState.id) <= 0) {
+            showToast('Por favor, guarda la cotización primero para generar el PDF.', 'warning');
+            return;
+        }
+        setPdfViewMode(mode);
+        setPdfLoading(true);
+        setPdfIframeUrl(getEventPdfUrl(formState.id, mode, Date.now()));
+    };
+
+    const currentStatusLabel = PDF_LABELS[pdfViewMode] || 'PDF con IVA';
+
     return (
         <div className="card shadow-sm border-0 mb-4" style={{ borderRadius: '16px' }}>
             <div className="card-body p-4">
@@ -74,7 +120,7 @@ export default function FinancialSummaryCard({
 
                 <div className="row g-4">
                     {/* Columna Izquierda: Tarjetas de Costos, Exportación y Enlaces */}
-                    <div className="col-lg-6">
+                    <div className="col-lg-5">
                         {/* Fila: Costo de Lavado | Costo Cotización */}
                         <div className="row g-3 mb-3">
                             <div className="col-6">
@@ -101,14 +147,11 @@ export default function FinancialSummaryCard({
                         </div>
 
                         {/* Banner: Total de Venta */}
-                        <div
-                            className="p-3 rounded-4 text-center mb-4 border"
-                            style={{ backgroundColor: '#f0f9ff', borderColor: '#bae6fd' }}
-                        >
-                            <div className="small fw-bold text-uppercase mb-1" style={{ fontSize: '0.75rem', color: '#0284c7' }}>
+                        <div className="p-3 rounded-4 text-center mb-4 slm-total-sale-banner">
+                            <div className="small fw-bold text-uppercase mb-1 slm-total-sale-label" style={{ fontSize: '0.75rem' }}>
                                 TOTAL DE VENTA
                             </div>
-                            <div className="fs-3 fw-bolder" style={{ color: '#0284c7' }}>
+                            <div className="fs-3 fw-bolder slm-total-sale-amount">
                                 ${grandTotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </div>
                         </div>
@@ -122,53 +165,61 @@ export default function FinancialSummaryCard({
                             <div className="d-flex flex-column gap-2">
                                 <button
                                     type="button"
-                                    className="btn btn-outline-primary rounded-pill px-4 py-2 d-flex justify-content-between align-items-center text-start bg-white"
-                                    style={{ borderColor: '#bfdbfe', color: '#2563eb' }}
-                                    onClick={() => {
-                                        setPdfViewMode('con-iva');
-                                        if (formState.id) window.open(`/api/events/pdf/${formState.id}`, '_blank');
-                                    }}
+                                    className={`btn rounded-pill px-4 py-2 d-flex justify-content-between align-items-center text-start slm-export-btn ${
+                                        pdfViewMode === 'con-iva' && pdfIframeUrl ? 'is-active' : ''
+                                    }`}
+                                    onClick={() => previewPDF('con-iva')}
                                 >
                                     <span className="d-flex align-items-center gap-2">
-                                        <i className="bi bi-file-earmark-pdf"></i> Generar PDF con IVA
+                                        <i className="bi bi-file-earmark-pdf text-danger"></i> Generar PDF con IVA
                                     </span>
                                     <i className="bi bi-chevron-right text-muted small"></i>
                                 </button>
 
                                 <button
                                     type="button"
-                                    className="btn btn-outline-primary rounded-pill px-4 py-2 d-flex justify-content-between align-items-center text-start bg-white"
-                                    style={{ borderColor: '#bfdbfe', color: '#2563eb' }}
-                                    onClick={() => {
-                                        setPdfViewMode('sin-iva');
-                                        if (formState.id) window.open(`/api/events/pdf/sin-iva/${formState.id}`, '_blank');
-                                    }}
+                                    className={`btn rounded-pill px-4 py-2 d-flex justify-content-between align-items-center text-start slm-export-btn ${
+                                        pdfViewMode === 'sin-iva' && pdfIframeUrl ? 'is-active' : ''
+                                    }`}
+                                    onClick={() => previewPDF('sin-iva')}
                                 >
                                     <span className="d-flex align-items-center gap-2">
-                                        <i className="bi bi-file-earmark-pdf"></i> Generar PDF sin IVA
+                                        <i className="bi bi-file-earmark-pdf text-warning"></i> Generar PDF sin IVA
+                                    </span>
+                                    <i className="bi bi-chevron-right text-muted small"></i>
+                                </button>
+
+                                {Number(formState.estatus) > 1 && (
+                                    <button
+                                        type="button"
+                                        className={`btn rounded-pill px-4 py-2 d-flex justify-content-between align-items-center text-start slm-export-btn ${
+                                            pdfViewMode === 'remision' && pdfIframeUrl ? 'is-active' : ''
+                                        }`}
+                                        onClick={() => previewPDF('remision')}
+                                    >
+                                        <span className="d-flex align-items-center gap-2">
+                                            <i className="bi bi-file-earmark-text text-info"></i> Generar PDF Orden de Remisión
+                                        </span>
+                                        <i className="bi bi-chevron-right text-muted small"></i>
+                                    </button>
+                                )}
+
+                                <button
+                                    type="button"
+                                    className={`btn rounded-pill px-4 py-2 d-flex justify-content-between align-items-center text-start slm-export-btn ${
+                                        pdfViewMode === 'logistica' && pdfIframeUrl ? 'is-active' : ''
+                                    }`}
+                                    onClick={() => previewPDF('logistica')}
+                                >
+                                    <span className="d-flex align-items-center gap-2">
+                                        <i className="bi bi-truck"></i> Generar PDF Orden de Logística
                                     </span>
                                     <i className="bi bi-chevron-right text-muted small"></i>
                                 </button>
 
                                 <button
                                     type="button"
-                                    className="btn btn-outline-primary rounded-pill px-4 py-2 d-flex justify-content-between align-items-center text-start bg-white"
-                                    style={{ borderColor: '#bfdbfe', color: '#2563eb' }}
-                                    onClick={() => {
-                                        setPdfViewMode('logistica');
-                                        if (formState.id) window.open(`/api/events/pdf/logistica/${formState.id}`, '_blank');
-                                    }}
-                                >
-                                    <span className="d-flex align-items-center gap-2">
-                                        <i className="bi bi-file-earmark-pdf"></i> Generar PDF Orden de Logística
-                                    </span>
-                                    <i className="bi bi-chevron-right text-muted small"></i>
-                                </button>
-
-                                <button
-                                    type="button"
-                                    className="btn btn-outline-primary rounded-pill px-4 py-2 d-flex justify-content-between align-items-center text-start bg-white"
-                                    style={{ borderColor: '#bfdbfe', color: '#2563eb' }}
+                                    className="btn rounded-pill px-4 py-2 d-flex justify-content-between align-items-center text-start slm-export-btn"
                                     onClick={handleSendWhatsapp}
                                 >
                                     <span className="d-flex align-items-center gap-2">
@@ -195,10 +246,10 @@ export default function FinancialSummaryCard({
                                 </button>
                             </div>
                             <textarea
-                                className="form-control rounded-3"
+                                className="form-control rounded-3 slm-readonly-box"
                                 rows="3"
                                 readOnly
-                                style={{ fontSize: '0.85rem', backgroundColor: '#f8fafc', borderColor: '#e2e8f0' }}
+                                style={{ fontSize: '0.85rem' }}
                                 value={whatsappMessage}
                             />
                         </div>
@@ -211,15 +262,15 @@ export default function FinancialSummaryCard({
                             <div className="input-group">
                                 <input
                                     type="text"
-                                    className="form-control font-monospace"
-                                    style={{ fontSize: '0.85rem', borderRadius: '8px 0 0 8px', borderColor: '#e2e8f0' }}
+                                    className="form-control font-monospace slm-readonly-box"
+                                    style={{ fontSize: '0.85rem', borderRadius: '8px 0 0 8px' }}
                                     readOnly
                                     value={quoteUrl}
                                 />
                                 <button
                                     type="button"
-                                    className="btn btn-outline-secondary"
-                                    style={{ borderRadius: '0 8px 8px 0', borderColor: '#e2e8f0' }}
+                                    className="btn slm-copy-addon-btn"
+                                    style={{ borderRadius: '0 8px 8px 0' }}
                                     onClick={() => handleCopy(quoteUrl, 'quote')}
                                     title="Copiar enlace"
                                 >
@@ -236,15 +287,15 @@ export default function FinancialSummaryCard({
                             <div className="input-group">
                                 <input
                                     type="text"
-                                    className="form-control font-monospace"
-                                    style={{ fontSize: '0.85rem', borderRadius: '8px 0 0 8px', borderColor: '#e2e8f0' }}
+                                    className="form-control font-monospace slm-readonly-box"
+                                    style={{ fontSize: '0.85rem', borderRadius: '8px 0 0 8px' }}
                                     readOnly
                                     value={logisticsUrl}
                                 />
                                 <button
                                     type="button"
-                                    className="btn btn-outline-secondary"
-                                    style={{ borderRadius: '0 8px 8px 0', borderColor: '#e2e8f0' }}
+                                    className="btn slm-copy-addon-btn"
+                                    style={{ borderRadius: '0 8px 8px 0' }}
                                     onClick={() => handleCopy(logisticsUrl, 'logistics')}
                                     title="Copiar enlace"
                                 >
@@ -254,145 +305,78 @@ export default function FinancialSummaryCard({
                         </div>
                     </div>
 
-                    {/* Columna Derecha: Vista Previa del PDF */}
-                    <div className="col-lg-6">
-                        <div className="border rounded-4 p-3 bg-white h-100 d-flex flex-column" style={{ minHeight: '520px' }}>
-                            {/* Header del visor */}
-                            <div className="d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom">
+                    {/* Columna Derecha: Vista Previa del PDF (idéntico a summary_form.blade.php) */}
+                    <div className="col-lg-7">
+                        <div className="rounded-4 p-3 h-100 d-flex flex-column slm-pdf-preview-card" style={{ minHeight: '620px' }}>
+                            {/* Header del visor: únicamente título a la izquierda y badge de estado a la derecha */}
+                            <div className="d-flex justify-content-between align-items-center pb-2 mb-2 slm-pdf-preview-header">
                                 <div className="d-flex align-items-center gap-2">
                                     <span className="spinner-grow spinner-grow-sm text-primary" style={{ width: '8px', height: '8px' }}></span>
                                     <span className="small fw-bold text-uppercase text-muted" style={{ fontSize: '0.75rem' }}>
                                         VISTA PREVIA DEL PDF
                                     </span>
                                 </div>
-                                <span className="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1 small">
-                                    PDF {pdfViewMode === 'sin-iva' ? 'Sin IVA' : pdfViewMode === 'logistica' ? 'Logística' : 'con IVA'}
+                                <span
+                                    className={`badge rounded-pill px-3 py-1 small ${
+                                        !pdfIframeUrl
+                                            ? 'bg-secondary-subtle text-secondary border border-secondary-subtle'
+                                            : pdfLoading
+                                            ? 'bg-primary-subtle text-primary border border-primary-subtle'
+                                            : 'bg-success-subtle text-success border border-success-subtle'
+                                    }`}
+                                >
+                                    {!pdfIframeUrl
+                                        ? 'Selecciona un PDF'
+                                        : pdfLoading
+                                        ? `Cargando ${currentStatusLabel}...`
+                                        : currentStatusLabel}
                                 </span>
                             </div>
 
-                            {/* Contenedor del documento PDF - Vista en vivo */}
-                            <div className="flex-grow-1 border rounded-3 bg-light overflow-auto position-relative" style={{ minHeight: '480px', maxHeight: '620px' }}>
-                                <div className="p-4 bg-white h-100 shadow-sm" style={{ fontSize: '0.825rem' }}>
-                                    {/* Membrete Documento */}
-                                    <div className="d-flex justify-content-between align-items-start border-bottom pb-3 mb-3">
-                                        <div>
-                                            <h3 className="fw-bolder mb-0 text-dark tracking-wide" style={{ letterSpacing: '1px' }}>
-                                                SOBRE<br />LA MESA
-                                            </h3>
-                                            <small className="text-muted d-block mt-1">
-                                                Fecha Cotización: {formState.fecha_cotizacion || new Date().toISOString().split('T')[0]}
-                                            </small>
-                                        </div>
-
-                                        <div className="text-end">
-                                            <h5 className="fw-bold mb-1 text-primary">
-                                                Cotización {folioStr}
-                                            </h5>
-                                            <div className="small text-dark fw-semibold">
-                                                {clientName}
-                                            </div>
-                                            <div className="small text-muted">
-                                                Fecha Evento: <strong>{formState.fecha_evento || 'Por definir'}</strong>
-                                            </div>
-                                            {formState.fecha_entrega && (
-                                                <div className="small text-muted" style={{ fontSize: '0.75rem' }}>
-                                                    Entrega: {formState.fecha_entrega} ({formState.hora_entrega || '12:00'})
-                                                </div>
-                                            )}
-                                            {formState.fecha_recoleccion && (
-                                                <div className="small text-muted" style={{ fontSize: '0.75rem' }}>
-                                                    Recolección: {formState.fecha_recoleccion} ({formState.hora_recoleccion || '12:00'})
-                                                </div>
-                                            )}
-                                            {formState.domicilio_entrega && (
-                                                <div className="small text-muted mt-1" style={{ fontSize: '0.75rem', maxWidth: '240px' }}>
-                                                    Lugar: {formState.domicilio_entrega}
-                                                </div>
-                                            )}
-                                        </div>
+                            {/* Cuerpo del visor del PDF */}
+                            <div
+                                className="flex-grow-1 rounded-3 overflow-hidden d-flex align-items-center justify-content-center position-relative slm-pdf-preview-body"
+                                style={{ minHeight: '580px' }}
+                            >
+                                {!pdfIframeUrl && !pdfLoading && (
+                                    <div id="no_pdf_placeholder" className="text-center p-5 text-muted">
+                                        <i className="bi bi-file-earmark-pdf display-4 d-block mb-3 text-secondary opacity-50"></i>
+                                        <p className="mb-0">
+                                            Haz clic en uno de los botones de la izquierda para ver la vista previa del documento aquí
+                                        </p>
                                     </div>
+                                )}
 
-                                    {/* Partidas en la hoja */}
-                                    <div className="table-responsive mb-3">
-                                        <table className="table table-sm table-bordered align-middle mb-0" style={{ fontSize: '0.75rem' }}>
-                                            <thead className="table-light">
-                                                <tr>
-                                                    <th className="text-center" style={{ width: '35px' }}>#</th>
-                                                    <th style={{ width: '50px' }}>Foto</th>
-                                                    <th>Descripción</th>
-                                                    <th className="text-center" style={{ width: '60px' }}>Cant.</th>
-                                                    <th className="text-end" style={{ width: '80px' }}>Precio</th>
-                                                    <th className="text-center" style={{ width: '50px' }}>Días</th>
-                                                    <th className="text-end" style={{ width: '90px' }}>Subtotal</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {activeProducts.map((p, idx) => (
-                                                    <tr key={idx}>
-                                                        <td className="text-center text-muted">{idx + 1}</td>
-                                                        <td>
-                                                            {p.imagen ? (
-                                                                <img
-                                                                    src={`https://sobre-la-mesa.com/images/productos/${p.imagen}`}
-                                                                    alt=""
-                                                                    className="rounded border"
-                                                                    style={{ width: '32px', height: '32px', objectFit: 'cover' }}
-                                                                    onError={(e) => {
-                                                                        e.target.onerror = null;
-                                                                        e.target.src = 'https://placehold.co/32x32?text=SLM';
-                                                                    }}
-                                                                />
-                                                            ) : (
-                                                                <span className="text-muted small">-</span>
-                                                            )}
-                                                        </td>
-                                                        <td>
-                                                            <div className="fw-semibold text-uppercase">{p.producto}</div>
-                                                            {p.clave && <small className="text-muted font-monospace">{p.clave}</small>}
-                                                        </td>
-                                                        <td className="text-center fw-bold">{p.cantidad}</td>
-                                                        <td className="text-end">${Number(p.precio_producto).toFixed(2)}</td>
-                                                        <td className="text-center">{p.dias || 1}</td>
-                                                        <td className="text-end fw-bold text-primary">${Number(p.subtotal).toFixed(2)}</td>
-                                                    </tr>
-                                                ))}
-                                                {activeProducts.length === 0 && (
-                                                    <tr>
-                                                        <td colSpan="7" className="text-center py-4 text-muted">
-                                                            Agrega productos desde el catálogo (F2) para visualizar la cotización membretada.
-                                                        </td>
-                                                    </tr>
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    {/* Totales en la hoja */}
-                                    <div className="d-flex justify-content-end">
-                                        <div style={{ width: '240px' }} className="border rounded-2 p-2 bg-light">
-                                            <div className="d-flex justify-content-between py-1">
-                                                <span className="text-muted">Subtotal Renta:</span>
-                                                <span className="fw-semibold">${totalRental.toFixed(2)}</span>
-                                            </div>
-                                            {generalDiscountPercent > 0 && (
-                                                <div className="d-flex justify-content-between py-1 text-danger">
-                                                    <span>Desc. ({generalDiscountPercent}%):</span>
-                                                    <span>-${generalDiscountAmount.toFixed(2)}</span>
-                                                </div>
-                                            )}
-                                            {washNet > 0 && (
-                                                <div className="d-flex justify-content-between py-1">
-                                                    <span className="text-muted">Lavado:</span>
-                                                    <span className="fw-semibold">${washNet.toFixed(2)}</span>
-                                                </div>
-                                            )}
-                                            <div className="d-flex justify-content-between py-1 border-top fw-bold text-primary fs-6">
-                                                <span>Total:</span>
-                                                <span>${grandTotal.toFixed(2)}</span>
-                                            </div>
+                                {pdfLoading && (
+                                    <div
+                                        id="pdf_loading"
+                                        className="text-center p-5 position-absolute rounded-4 shadow-sm slm-pdf-loading-card"
+                                        style={{ zIndex: 10 }}
+                                    >
+                                        <div className="spinner-border text-primary" role="status" style={{ width: '3rem', height: '3rem' }}>
+                                            <span className="visually-hidden">Generando PDF...</span>
                                         </div>
+                                        <p className="mt-3 text-dark fw-bold mb-0">Generando y cargando PDF...</p>
+                                        <span className="text-muted small">Por favor, espera un momento</span>
                                     </div>
-                                </div>
+                                )}
+
+                                {pdfIframeUrl && (
+                                    <iframe
+                                        name="pdf_preview"
+                                        id="pdf_preview"
+                                        title="Vista Previa del PDF"
+                                        src={pdfIframeUrl}
+                                        width="100%"
+                                        height="600px"
+                                        style={{
+                                            border: 'none',
+                                            display: pdfLoading ? 'none' : 'block',
+                                            minHeight: '580px'
+                                        }}
+                                        onLoad={() => setPdfLoading(false)}
+                                    />
+                                )}
                             </div>
                         </div>
                     </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { showToast, showConfirm } from '../../../../shared/utils/alerts';
 import { authorizeStockProductService } from '../../services/events.service';
 
@@ -25,6 +25,8 @@ export default function ProductsTableCard({
     });
     const [authPassword, setAuthPassword] = useState('');
     const [authorizingOversell, setAuthorizingOversell] = useState(false);
+    const [draggedIndex, setDraggedIndex] = useState(null);
+    const draggedIndexRef = useRef(null);
 
     // Agregar Sección intermedia
     const handleAddSection = () => {
@@ -32,6 +34,7 @@ export default function ProductsTableCard({
         setItems(prev => [
             ...prev,
             {
+                _uid: `sec-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
                 type: 'section',
                 content_seccion: 'Nueva Sección',
                 row_position: nextPos,
@@ -47,6 +50,7 @@ export default function ProductsTableCard({
         setItems(prev => [
             ...prev,
             {
+                _uid: `note-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
                 type: 'note',
                 content_seccion: 'Nota para este bloque de productos...',
                 row_position: nextPos,
@@ -218,23 +222,263 @@ export default function ProductsTableCard({
         showToast('Partida eliminada', 'info');
     };
 
-    // Ordenar por categoría
+    // Identificar ID de categoría principal a partir del texto de título o nombre de categoría (igual que getCategoryIdFromTitle en php7/slm)
+    const getCategoryIdFromTitle = (titleText) => {
+        if (!titleText) return null;
+        const normalized = String(titleText)
+            .trim()
+            .toUpperCase()
+            .replace(/[ÁÀÄÂ]/g, 'A')
+            .replace(/[ÉÈËÊ]/g, 'E')
+            .replace(/[ÍÌÏÎ]/g, 'I')
+            .replace(/[ÓÒÖÔ]/g, 'O')
+            .replace(/[ÚÙÜÛ]/g, 'U');
+
+        if (normalized === 'TABLE STYLING') return 1;
+        if (normalized === 'DECORACION') return 2;
+        if (normalized === 'MOBLERIA' || normalized === 'MOBILIARIO') return 3;
+        if (normalized === 'TEXTILES') return 4;
+        if (normalized === 'SERVICIOS') return 41;
+        return null;
+    };
+
+    // Ordenamiento automático por Categoría y Subcategoría (tomado de automaticSortingProducts en php7/slm)
     const handleSortByCategory = () => {
         setItems(prev => {
-            const prods = prev.filter(it => it.type === 'product' || !it.type);
-            const others = prev.filter(it => it.type === 'section' || it.type === 'note');
+            const categoryNames = {
+                1: 'TABLE STYLING',
+                2: 'DECORACIÓN',
+                3: 'MOBLERÍA',
+                4: 'TEXTILES',
+                41: 'SERVICIOS'
+            };
 
-            prods.sort((a, b) => {
-                const catA = (a.categoria || '').toLowerCase();
-                const catB = (b.categoria || '').toLowerCase();
-                if (catA < catB) return -1;
-                if (catA > catB) return 1;
+            const categoryLists = {
+                1: [],
+                2: [],
+                3: [],
+                4: [],
+                41: []
+            };
+            const catOtros = [];
+            const extraSections = [];
+            const topNotes = [];
+            const notesByAnchor = new Map();
+            const headerNotes = {
+                1: [],
+                2: [],
+                3: [],
+                4: [],
+                41: []
+            };
+            const existingHeaders = {
+                1: null,
+                2: null,
+                3: null,
+                4: null,
+                41: null
+            };
+            const deletedItems = [];
+
+            let lastAnchor = null; // null | { kind: 'catHeader', catId } | { kind: 'item', ref }
+
+            // 1. Escanear y agrupar partidas activas, preservando dónde está anclada cada nota
+            prev.forEach(item => {
+                if (item.row_status === 'deleted' || item.row_status === 'cancelled') {
+                    deletedItems.push(item);
+                    return;
+                }
+
+                if (item.type === 'section' || item.type === 3) {
+                    const catId = getCategoryIdFromTitle(item.content_seccion || item.producto);
+                    if (catId !== null) {
+                        if (!existingHeaders[catId]) {
+                            existingHeaders[catId] = item;
+                        } else if (item.id) {
+                            deletedItems.push({ ...item, row_status: 'deleted' });
+                        }
+                        lastAnchor = { kind: 'catHeader', catId };
+                    } else {
+                        extraSections.push(item);
+                        lastAnchor = { kind: 'item', ref: item };
+                    }
+                } else if (item.type === 'note' || item.type === 2) {
+                    if (!lastAnchor) {
+                        topNotes.push(item);
+                    } else if (lastAnchor.kind === 'catHeader') {
+                        headerNotes[lastAnchor.catId].push(item);
+                    } else {
+                        const list = notesByAnchor.get(lastAnchor.ref) || [];
+                        list.push(item);
+                        notesByAnchor.set(lastAnchor.ref, list);
+                    }
+                } else {
+                    const rawCatId = Number(item.categoria_producto_id || item.category_id || 0);
+                    const catId = rawCatId || getCategoryIdFromTitle(item.categoria) || 0;
+
+                    if (categoryLists[catId]) {
+                        categoryLists[catId].push(item);
+                    } else {
+                        catOtros.push(item);
+                    }
+                    lastAnchor = { kind: 'item', ref: item };
+                }
+            });
+
+            const expandWithNotes = (arr) => {
+                const res = [];
+                arr.forEach(it => {
+                    res.push(it);
+                    const attachedNotes = notesByAnchor.get(it);
+                    if (attachedNotes && attachedNotes.length > 0) {
+                        res.push(...attachedNotes);
+                    }
+                });
+                return res;
+            };
+
+            // 2. Ordenar productos por subcategoría dentro de cada categoría principal e insertar su encabezado de sección
+            const mainCategories = [1, 2, 3, 4, 41];
+            mainCategories.forEach(catId => {
+                const prods = categoryLists[catId];
+                if (prods.length > 0) {
+                    prods.sort((a, b) => {
+                        const subA = Number(a.subcategoria_id ?? a.sub_category_id ?? 0);
+                        const subB = Number(b.subcategoria_id ?? b.sub_category_id ?? 0);
+                        if (subA !== subB) return subA - subB;
+                        return (a.producto || '').localeCompare(b.producto || '');
+                    });
+
+                    const header = existingHeaders[catId]
+                        ? {
+                              ...existingHeaders[catId],
+                              type: 'section',
+                              content_seccion: categoryNames[catId],
+                              row_status: existingHeaders[catId].row_status === 'new' ? 'new' : 'modified'
+                          }
+                        : {
+                              _uid: `sec-cat-${catId}-${Date.now()}`,
+                              type: 'section',
+                              content_seccion: categoryNames[catId],
+                              row_position: 0,
+                              row_status: 'new'
+                          };
+
+                    categoryLists[catId] = [header, ...headerNotes[catId], ...expandWithNotes(prods)];
+                } else {
+                    if (existingHeaders[catId] && existingHeaders[catId].id) {
+                        deletedItems.push({ ...existingHeaders[catId], row_status: 'deleted' });
+                    }
+                    if (headerNotes[catId].length > 0) {
+                        topNotes.push(...headerNotes[catId]);
+                    }
+                }
+            });
+
+            // 3. Ordenar otros productos por categoría y luego por subcategoría
+            catOtros.sort((a, b) => {
+                const catA = Number(a.categoria_producto_id ?? a.category_id ?? 0);
+                const catB = Number(b.categoria_producto_id ?? b.category_id ?? 0);
+                if (catA !== catB) return catA - catB;
+                const subA = Number(a.subcategoria_id ?? a.sub_category_id ?? 0);
+                const subB = Number(b.subcategoria_id ?? b.sub_category_id ?? 0);
+                if (subA !== subB) return subA - subB;
                 return (a.producto || '').localeCompare(b.producto || '');
             });
 
-            return [...prods, ...others].map((it, idx) => ({ ...it, row_position: idx }));
+            // 4. Unificar en el orden definido: notas superiores, TABLE STYLING (1), TEXTILES (4), MOBLERÍA (3), DECORACIÓN (2), otros, SERVICIOS (41), secciones extra
+            let finalList = [...topNotes];
+            const mainOrder = [1, 4, 3, 2];
+
+            mainOrder.forEach(catId => {
+                if (categoryLists[catId].length > 0) {
+                    finalList = finalList.concat(categoryLists[catId]);
+                }
+            });
+
+            if (catOtros.length > 0) {
+                finalList = finalList.concat(expandWithNotes(catOtros));
+            }
+
+            if (categoryLists[41].length > 0) {
+                finalList = finalList.concat(categoryLists[41]);
+            }
+
+            if (extraSections.length > 0) {
+                finalList = finalList.concat(expandWithNotes(extraSections));
+            }
+
+            // 5. Reasignar row_position secuencialmente y preservar eliminados al final
+            const activeWithPositions = finalList.map((it, idx) => ({
+                ...it,
+                row_position: idx,
+                row_status: it.row_status === 'new' ? 'new' : 'modified'
+            }));
+
+            return [...activeWithPositions, ...deletedItems];
         });
-        showToast('Partidas ordenadas por categoría', 'info');
+        showToast('Productos organizados automáticamente', 'success');
+    };
+
+    // Reordenamiento manual en vivo por Drag & Drop para productos, secciones y notas (en cualquier posición)
+    const handleDragStart = (e, index) => {
+        draggedIndexRef.current = index;
+        setDraggedIndex(index);
+        e.dataTransfer.effectAllowed = 'move';
+        try {
+            e.dataTransfer.setData('text/plain', String(index));
+        } catch (_) {
+            // Ignorar en navegadores que restrinjan setData
+        }
+    };
+
+    const handleDragOver = (e, targetIndex) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+
+        const fromIndex = draggedIndexRef.current;
+        if (fromIndex === null || fromIndex === targetIndex) return;
+
+        const rowRect = e.currentTarget.getBoundingClientRect();
+        const mouseY = e.clientY - rowRect.top;
+        const rowMidpoint = rowRect.height / 2;
+
+        // Evitar rebotes si el cursor aún no cruza la mitad de la fila destino
+        if (fromIndex < targetIndex && mouseY < rowMidpoint) return;
+        if (fromIndex > targetIndex && mouseY > rowMidpoint) return;
+
+        draggedIndexRef.current = targetIndex;
+        setDraggedIndex(targetIndex);
+
+        setItems(prev => {
+            const copy = [...prev];
+            const [movedItem] = copy.splice(fromIndex, 1);
+            copy.splice(targetIndex, 0, movedItem);
+
+            let pos = 0;
+            return copy.map(it => {
+                if (it.row_status === 'deleted' || it.row_status === 'cancelled') {
+                    return it;
+                }
+                const nextPos = pos++;
+                return {
+                    ...it,
+                    row_position: nextPos,
+                    row_status: it.row_status === 'new' ? 'new' : 'modified'
+                };
+            });
+        });
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        draggedIndexRef.current = null;
+        setDraggedIndex(null);
+    };
+
+    const handleDragEnd = () => {
+        draggedIndexRef.current = null;
+        setDraggedIndex(null);
     };
 
     const handleSaveNewComment = () => {
@@ -262,8 +506,8 @@ export default function ProductsTableCard({
                         {/* Botón Buscar Productos (F2) */}
                         <button
                             type="button"
-                            className="btn btn-outline-primary rounded-pill px-4 py-2 d-flex align-items-center gap-2 fw-medium shadow-sm bg-white"
-                            style={{ minWidth: '220px', borderColor: '#3b82f6', color: '#2563eb' }}
+                            className="btn rounded-pill px-4 py-2 d-flex align-items-center gap-2 fw-medium shadow-sm slm-export-btn"
+                            style={{ minWidth: '220px' }}
                             onClick={onOpenProductModal}
                         >
                             <i className="bi bi-search"></i>
@@ -350,19 +594,46 @@ export default function ProductsTableCard({
                             <tbody>
                                 {items.map((item, index) => {
                                     if (item.row_status === 'deleted') return null;
+                                    const isDragging = draggedIndex !== null;
+                                    const isCurrentDragged = draggedIndex === index;
+                                    const rowKey = item._uid || (item.id ? `${item.type || 'prod'}-${item.id}` : `row-${index}`);
 
                                     // Fila de Sección
                                     if (item.type === 'section' || item.type === 3) {
                                         return (
-                                            <tr key={`sec-${item.id || index}`} className="bg-primary-subtle border-primary">
-                                                <td className="text-center text-muted cursor-grab">
+                                            <tr
+                                                key={rowKey}
+                                                className="bg-primary-subtle border-primary"
+                                                draggable
+                                                onDragStart={(e) => handleDragStart(e, index)}
+                                                onDragOver={(e) => handleDragOver(e, index)}
+                                                onDrop={handleDrop}
+                                                onDragEnd={handleDragEnd}
+                                                style={{
+                                                    opacity: isCurrentDragged ? 0.6 : 1,
+                                                    outline: isCurrentDragged ? '2px dashed #5a3dff' : undefined
+                                                }}
+                                            >
+                                                <td
+                                                    className="text-center text-muted"
+                                                    style={{ cursor: 'grab', userSelect: 'none' }}
+                                                    onMouseDown={() => {
+                                                        if (document.activeElement instanceof HTMLElement) {
+                                                            document.activeElement.blur();
+                                                        }
+                                                    }}
+                                                    title="Arrastrar para mover sección"
+                                                >
                                                     <i className="bi bi-grip-vertical"></i>
                                                 </td>
-                                                <td colSpan="8" className="py-2">
+                                                <td colSpan="8" className="py-2 text-center">
                                                     <input
                                                         type="text"
-                                                        className="form-control form-control-sm fw-bold border-0 bg-transparent text-primary"
-                                                        style={{ fontSize: '0.95rem' }}
+                                                        className="form-control form-control-sm fw-bold border-0 bg-transparent text-primary text-center"
+                                                        style={{
+                                                            fontSize: '0.95rem',
+                                                            pointerEvents: isDragging ? 'none' : undefined
+                                                        }}
                                                         value={item.content_seccion || ''}
                                                         placeholder="Título de la Sección..."
                                                         onChange={(e) => handleContentChange(index, e.target.value)}
@@ -372,6 +643,7 @@ export default function ProductsTableCard({
                                                     <button
                                                         type="button"
                                                         className="btn btn-outline-danger btn-sm border-0 rounded-circle"
+                                                        style={{ pointerEvents: isDragging ? 'none' : undefined }}
                                                         onClick={() => handleDeleteItem(index)}
                                                         title="Eliminar Sección"
                                                     >
@@ -385,14 +657,36 @@ export default function ProductsTableCard({
                                     // Fila de Nota
                                     if (item.type === 'note' || item.type === 2) {
                                         return (
-                                            <tr key={`note-${item.id || index}`} className="bg-warning-subtle border-warning">
-                                                <td className="text-center text-muted cursor-grab">
+                                            <tr
+                                                key={rowKey}
+                                                className="bg-warning-subtle border-warning"
+                                                draggable
+                                                onDragStart={(e) => handleDragStart(e, index)}
+                                                onDragOver={(e) => handleDragOver(e, index)}
+                                                onDrop={handleDrop}
+                                                onDragEnd={handleDragEnd}
+                                                style={{
+                                                    opacity: isCurrentDragged ? 0.6 : 1,
+                                                    outline: isCurrentDragged ? '2px dashed #5a3dff' : undefined
+                                                }}
+                                            >
+                                                <td
+                                                    className="text-center text-muted"
+                                                    style={{ cursor: 'grab', userSelect: 'none' }}
+                                                    onMouseDown={() => {
+                                                        if (document.activeElement instanceof HTMLElement) {
+                                                            document.activeElement.blur();
+                                                        }
+                                                    }}
+                                                    title="Arrastrar para mover nota a cualquier lugar"
+                                                >
                                                     <i className="bi bi-grip-vertical"></i>
                                                 </td>
-                                                <td colSpan="8" className="py-2">
+                                                <td colSpan="8" className="py-2 text-center">
                                                     <input
                                                         type="text"
-                                                        className="form-control form-control-sm border-0 bg-transparent text-dark"
+                                                        className="form-control form-control-sm fw-semibold border-0 bg-transparent text-dark text-center"
+                                                        style={{ pointerEvents: isDragging ? 'none' : undefined }}
                                                         value={item.content_seccion || ''}
                                                         placeholder="Nota..."
                                                         onChange={(e) => handleContentChange(index, e.target.value)}
@@ -402,6 +696,7 @@ export default function ProductsTableCard({
                                                     <button
                                                         type="button"
                                                         className="btn btn-outline-danger btn-sm border-0 rounded-circle"
+                                                        style={{ pointerEvents: isDragging ? 'none' : undefined }}
                                                         onClick={() => handleDeleteItem(index)}
                                                         title="Eliminar Nota"
                                                     >
@@ -427,12 +722,34 @@ export default function ProductsTableCard({
 
                                     return (
                                         <tr
-                                            key={`prod-${prodId}-${index}`}
+                                            key={rowKey}
                                             className={index % 2 === 1 ? 'bg-light-subtle' : ''}
-                                            style={{ backgroundColor: isUnauthorizedOversold ? '#fff1f2' : undefined }}
+                                            draggable
+                                            onDragStart={(e) => handleDragStart(e, index)}
+                                            onDragOver={(e) => handleDragOver(e, index)}
+                                            onDrop={handleDrop}
+                                            onDragEnd={handleDragEnd}
+                                            style={{
+                                                backgroundColor: isCurrentDragged
+                                                    ? '#e2dbff'
+                                                    : isUnauthorizedOversold
+                                                        ? '#fff1f2'
+                                                        : undefined,
+                                                opacity: isCurrentDragged ? 0.6 : 1,
+                                                outline: isCurrentDragged ? '2px dashed #5a3dff' : undefined
+                                            }}
                                         >
                                             {/* Drag handle */}
-                                            <td className="text-center text-muted" style={{ cursor: 'grab' }}>
+                                            <td
+                                                className="text-center text-muted"
+                                                style={{ cursor: 'grab', userSelect: 'none' }}
+                                                onMouseDown={() => {
+                                                    if (document.activeElement instanceof HTMLElement) {
+                                                        document.activeElement.blur();
+                                                    }
+                                                }}
+                                                title="Arrastrar para reordenar"
+                                            >
                                                 <i className="bi bi-grip-vertical text-secondary"></i>
                                             </td>
 
@@ -459,8 +776,12 @@ export default function ProductsTableCard({
                                                         type="number"
                                                         min="0"
                                                         className="form-control form-control-sm text-center fw-bold rounded-3"
-                                                        style={{ width: '70px', borderColor: isUnauthorizedOversold ? '#ef4444' : '#cbd5e1' }}
-                                                        value={item.cantidad ?? 1}
+                                                        style={{
+                                                            width: '70px',
+                                                            borderColor: isUnauthorizedOversold ? '#ef4444' : '#cbd5e1',
+                                                            pointerEvents: isDragging ? 'none' : undefined
+                                                        }}
+                                                        value={item.cantidad ?? 0}
                                                         onChange={(e) => handleProductChange(index, 'cantidad', e.target.value)}
                                                     />
                                                     <button
@@ -515,7 +836,11 @@ export default function ProductsTableCard({
                                                     type="number"
                                                     min="1"
                                                     className="form-control form-control-sm text-center rounded-3 mx-auto"
-                                                    style={{ width: '55px', borderColor: '#cbd5e1' }}
+                                                    style={{
+                                                        width: '55px',
+                                                        borderColor: '#cbd5e1',
+                                                        pointerEvents: isDragging ? 'none' : undefined
+                                                    }}
                                                     value={item.dias || 1}
                                                     onChange={(e) => handleProductChange(index, 'dias', e.target.value)}
                                                 />
@@ -528,7 +853,11 @@ export default function ProductsTableCard({
                                                     min="0"
                                                     max="100"
                                                     className="form-control form-control-sm text-center rounded-3 mx-auto"
-                                                    style={{ width: '55px', borderColor: '#cbd5e1' }}
+                                                    style={{
+                                                        width: '55px',
+                                                        borderColor: '#cbd5e1',
+                                                        pointerEvents: isDragging ? 'none' : undefined
+                                                    }}
                                                     value={item.descuento || 0}
                                                     onChange={(e) => handleProductChange(index, 'descuento', e.target.value)}
                                                 />
@@ -576,9 +905,9 @@ export default function ProductsTableCard({
                         </button>
                     </div>
 
-                    <div className="table-responsive border rounded-3 bg-white">
+                    <div className="table-responsive rounded-3 slm-comments-table-wrap">
                         <table className="table table-sm align-middle mb-0" style={{ fontSize: '0.85rem' }}>
-                            <thead style={{ backgroundColor: '#f8fafc', color: '#64748b' }}>
+                            <thead className="slm-table-head-Muted">
                                 <tr>
                                     <th style={{ width: '50px' }} className="text-center">#</th>
                                     <th>COMENTARIO</th>

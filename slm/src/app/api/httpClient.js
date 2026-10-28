@@ -6,7 +6,7 @@ const SERVER_URL = rawUrl.endsWith('/api') ? rawUrl : `${rawUrl.replace(/\/+$/, 
 
 const httpClient = axios.create({
     baseURL: SERVER_URL,
-    timeout: 10000
+    timeout: 30000
 })
 
 setupInterceptors(httpClient)

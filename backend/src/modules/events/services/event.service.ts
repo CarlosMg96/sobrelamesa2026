@@ -1,5 +1,5 @@
 import { EventRepository, EventQueryParams } from "../respository/event.repository";
-import { Event, EventDetailResponse, CatalogsResponse, SaveQuoteDTO } from "../interfaces/event";
+import { Event, EventDetailResponse, CatalogsResponse, SaveQuoteDTO, CreateQuickClientDTO, CreateQuickCompanyDTO, CreateQuickPlaceDTO } from "../interfaces/event";
 
 export class EventService {
     constructor(private readonly repo: EventRepository) { }
@@ -56,6 +56,18 @@ export class EventService {
 
     async getCatalogs(): Promise<CatalogsResponse> {
         return await this.repo.getCatalogs();
+    }
+
+    async createQuickClient(dto: CreateQuickClientDTO): Promise<any> {
+        return await this.repo.createQuickClient(dto);
+    }
+
+    async createQuickCompany(dto: CreateQuickCompanyDTO): Promise<any> {
+        return await this.repo.createQuickCompany(dto);
+    }
+
+    async createQuickPlace(dto: CreateQuickPlaceDTO): Promise<any> {
+        return await this.repo.createQuickPlace(dto);
     }
 
     async saveOrUpdateQuote(dto: SaveQuoteDTO, userId?: number, userName?: string): Promise<{ id: number; message: string; url_seguimiento?: string }> {
