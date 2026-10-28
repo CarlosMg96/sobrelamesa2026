@@ -33,6 +33,8 @@ export const showAlert = ({ title, text, icon = 'info', confirmButtonText = 'Ace
 };
 
 // Modal de Confirmación
+export const isAlertVisible = () => Boolean(Swal.isVisible && Swal.isVisible());
+
 export const showConfirm = ({ title, text, confirmButtonText = 'Sí, confirmar', cancelButtonText = 'Cancelar', icon = 'warning' }) => {
     return Swal.fire({
         title,

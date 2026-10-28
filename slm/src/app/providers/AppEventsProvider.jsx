@@ -16,12 +16,16 @@ export function AppEventsProvider({ children }) {
         })
 
         const offOffline = on(AppEvents.OFFLINE, () => {
-            notify('Sin conexión al servidor ⚠️')
+            setTimeout(() => {
+                notify('Sin conexión al servidor ⚠️', 'warning')
+            }, 60)
         })
 
         const offApiError = on(AppEvents.API_ERROR, (data) => {
             if (data?.message) {
-                notify(data.message)
+                setTimeout(() => {
+                    notify(data.message, 'error')
+                }, 60)
             }
         })
 
