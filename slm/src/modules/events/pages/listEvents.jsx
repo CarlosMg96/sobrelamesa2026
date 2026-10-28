@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { getEventsListService, getSolversService } from '../services/events.service';
 import { showToast, showConfirm } from '../../../shared/utils/alerts';
+import { openEventPdfById } from '../utils/quotePdfTemplate';
 
 // Formato de fecha en español idéntico al legacy: "domingo, 25 de octubre de 2026"
 const formatDateES = (dateStr) => {
@@ -755,7 +756,7 @@ export default function ListEvents() {
                                   className="slm-table-dropdown-item"
                                   onClick={() => {
                                     setOpenDropdownId(null);
-                                    window.open(`/api/events/pdf/sin-iva/${evt.id}`, '_blank');
+                                    openEventPdfById(evt.id, 'sin-iva');
                                   }}
                                 >
                                   <i className="bi bi-download text-muted"></i> Generar PDF Sin IVA
@@ -767,7 +768,7 @@ export default function ListEvents() {
                                   className="slm-table-dropdown-item"
                                   onClick={() => {
                                     setOpenDropdownId(null);
-                                    window.open(`/api/events/pdf/${evt.id}`, '_blank');
+                                    openEventPdfById(evt.id, 'con-iva');
                                   }}
                                 >
                                   <i className="bi bi-download text-muted"></i> Generar PDF
@@ -779,7 +780,7 @@ export default function ListEvents() {
                                   className="slm-table-dropdown-item"
                                   onClick={() => {
                                     setOpenDropdownId(null);
-                                    window.open(`/api/events/pdf/logistica/${evt.id}`, '_blank');
+                                    openEventPdfById(evt.id, 'logistica');
                                   }}
                                 >
                                   <i className="bi bi-download text-muted"></i> Generar PDF Orden Logística
