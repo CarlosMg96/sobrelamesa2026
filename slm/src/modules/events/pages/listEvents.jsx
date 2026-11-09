@@ -315,20 +315,22 @@ export default function ListEvents() {
     );
   };
 
+  // Helper para verificar si la cotización cuenta con firma
+  const isEventSigned = (evt) => {
+    if (!evt) return false;
+    const sf = typeof evt.status_firmas === 'string' ? evt.status_firmas.trim().toLowerCase() : '';
+    if (sf && sf !== 'null' && sf !== 'undefined' && sf !== '0') return true;
+    const f = typeof evt.firma === 'string' ? evt.firma.trim() : '';
+    if (f && f !== 'default.png' && f !== 'null' && f !== 'undefined' && f !== '0') return true;
+    const fl = typeof evt.firma_logistica === 'string' ? evt.firma_logistica.trim() : '';
+    if (fl && fl !== 'default.png' && fl !== 'null' && fl !== 'undefined' && fl !== '0') return true;
+    return false;
+  };
+
   // Render Category Icons underneath Folio
   const renderCategoryIcons = (categoriesStr) => {
     if (!categoriesStr) {
-      // Default icon display
-      return (
-        <div className="d-flex gap-1 align-items-center mt-1">
-          <span className="cat-badge-icon" title="Vehículo / Logística">
-            <i className="bi bi-truck"></i>
-          </span>
-          <span className="cat-badge-icon" title="Mobiliario">
-            <i className="bi bi-box-seam"></i>
-          </span>
-        </div>
-      );
+      return null;
     }
 
     const cats = String(categoriesStr).split(',');
@@ -338,31 +340,100 @@ export default function ListEvents() {
           switch (c.trim()) {
             case '1':
               return (
-                <span key={idx} className="cat-badge-icon" title="Table Styling">
+                <span
+                  key={idx}
+                  className="cat-badge-icon"
+                  title="Table Styling"
+                  data-slm-tooltip="Table Styling"
+                >
                   <i className="bi bi-cup-straw"></i>
                 </span>
               );
             case '2':
               return (
-                <span key={idx} className="cat-badge-icon" title="Decoración">
+                <span
+                  key={idx}
+                  className="cat-badge-icon"
+                  title="Decoración"
+                  data-slm-tooltip="Decoración"
+                >
                   <i className="bi bi-palette"></i>
                 </span>
               );
             case '3':
               return (
-                <span key={idx} className="cat-badge-icon" title="Mobiliario">
+                <span
+                  key={idx}
+                  className="cat-badge-icon"
+                  title="Moblería"
+                  data-slm-tooltip="Moblería"
+                >
                   <i className="bi bi-lamp"></i>
                 </span>
               );
             case '4':
               return (
-                <span key={idx} className="cat-badge-icon" title="Textiles">
+                <span
+                  key={idx}
+                  className="cat-badge-icon"
+                  title="Textiles"
+                  data-slm-tooltip="Textiles"
+                >
                   <i className="bi bi-grid-3x3"></i>
+                </span>
+              );
+            case '41':
+              return (
+                <span
+                  key={idx}
+                  className="cat-badge-icon"
+                  title="Servicios / Flete"
+                  data-slm-tooltip="Servicios / Flete"
+                >
+                  <i className="bi bi-truck"></i>
+                </span>
+              );
+            case '42':
+              return (
+                <span
+                  key={idx}
+                  className="cat-badge-icon"
+                  title="Proveedor Externo"
+                  data-slm-tooltip="Proveedor Externo"
+                >
+                  <i className="bi bi-box-seam"></i>
+                </span>
+              );
+            case '43':
+              return (
+                <span
+                  key={idx}
+                  className="cat-badge-icon"
+                  title="Flores"
+                  data-slm-tooltip="Flores"
+                >
+                  <i className="bi bi-flower1"></i>
+                </span>
+              );
+            case '44':
+              return (
+                <span
+                  key={idx}
+                  className="cat-badge-icon"
+                  title="Velas"
+                  data-slm-tooltip="Velas"
+                >
+                  <i className="bi bi-fire"></i>
                 </span>
               );
             default:
               return (
-                <span key={idx} className="cat-badge-icon" title="General">
+                <span
+                  key={idx}
+                  className="cat-badge-icon"
+                  title="General"
+                  data-slm-tooltip="General"
+                >
                   <i className="bi bi-tag"></i>
                 </span>
               );
@@ -611,8 +682,9 @@ export default function ListEvents() {
                   </td>
                 </tr>
               ) : (
-                events.map((evt) => {
+                events.map((evt, rowIndex) => {
                   const isDropdownOpen = openDropdownId === evt.id;
+                  const isDropup = rowIndex >= Math.max(0, events.length - 4);
 
                   return (
                     <tr key={evt.id}>
@@ -621,10 +693,11 @@ export default function ListEvents() {
                         <div className="d-flex flex-column align-items-center">
                           <div className="d-flex align-items-center gap-1">
                             <span className="fw-bold">CO-00{evt.id}</span>
-                            {(evt.status_firmas || evt.firma) && (
+                            {isEventSigned(evt) && (
                               <span
                                 className="cat-badge-icon"
-                                title="Cotización Firmada"
+                                title={evt.status_firmas || "Cotización Firmada"}
+                                data-slm-tooltip={evt.status_firmas || "Cotización Firmada"}
                                 style={{ width: 20, height: 20, fontSize: '0.65rem' }}
                               >
                                 <i className="bi bi-pen"></i>
@@ -737,7 +810,7 @@ export default function ListEvents() {
 
                           {/* Action Dropdown Menu */}
                           {isDropdownOpen && (
-                            <ul className="slm-table-dropdown shadow">
+                            <ul className={`slm-table-dropdown shadow ${isDropup ? 'dropup' : ''}`}>
                               <li>
                                 <button
                                   type="button"

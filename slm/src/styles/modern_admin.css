@@ -1191,12 +1191,86 @@ body,
   font-size: 0.72rem;
   border: 1px solid #e2e8f0;
   transition: all 0.15s ease;
+  position: relative;
+  cursor: pointer;
+}
+
+.cat-badge-icon:hover {
+  background: #e2e8f0;
+  color: #0f172a;
 }
 
 [data-theme="dark"] .cat-badge-icon {
   background: #1e293b;
   color: #94a3b8;
   border-color: #334155;
+}
+
+[data-theme="dark"] .cat-badge-icon:hover {
+  background: #334155;
+  color: #f8fafc;
+}
+
+/* Tooltip elegante para badges e iconos de la tabla */
+[data-slm-tooltip] {
+  position: relative;
+}
+
+[data-slm-tooltip]::before,
+[data-slm-tooltip]::after {
+  position: absolute;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
+  z-index: 1060;
+}
+
+/* Triángulo del tooltip */
+[data-slm-tooltip]::before {
+  content: "";
+  bottom: calc(100% + 1px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  border-width: 5px 5px 0 5px;
+  border-style: solid;
+  border-color: rgba(15, 23, 42, 0.95) transparent transparent transparent;
+}
+
+/* Caja de texto del tooltip */
+[data-slm-tooltip]::after {
+  content: attr(data-slm-tooltip);
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: rgba(15, 23, 42, 0.95);
+  color: #ffffff;
+  padding: 4px 8px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  letter-spacing: 0.2px;
+}
+
+[data-theme="dark"] [data-slm-tooltip]::before {
+  border-color: rgba(30, 41, 59, 0.98) transparent transparent transparent;
+}
+
+[data-theme="dark"] [data-slm-tooltip]::after {
+  background: rgba(30, 41, 59, 0.98);
+  color: #f1f5f9;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+[data-slm-tooltip]:hover::before,
+[data-slm-tooltip]:hover::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
 }
 
 /* Action Dropdown Menu */
@@ -1206,6 +1280,9 @@ body,
   right: 0;
   z-index: 1050;
   min-width: 230px;
+  max-height: min(340px, 80vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 0.5rem 0;
   margin: 0.125rem 0 0;
   font-size: 0.875rem;
@@ -1218,6 +1295,32 @@ body,
   border-radius: 12px;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   animation: fadeInDown 0.15s ease-out;
+}
+
+/* Scrollbar estilizado para el menú dropdown */
+.slm-table-dropdown::-webkit-scrollbar {
+  width: 5px;
+}
+
+.slm-table-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.slm-table-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 4px;
+}
+
+.slm-table-dropdown::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.7);
+}
+
+/* Modo Dropup inteligente para filas inferiores sin desbordar la pantalla ni quedar tapado */
+.slm-table-dropdown.dropup {
+  top: auto;
+  bottom: 100%;
+  margin-top: 0;
+  margin-bottom: 0.25rem;
 }
 
 .slm-table-dropdown-item {
